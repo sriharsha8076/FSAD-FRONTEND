@@ -31,11 +31,11 @@
 
 .primary:hover:not(:disabled) {
     box-shadow: var(--shadow-glow);
-    transform: translateY(-2px);
+    transform: translateY(-2px) scale(1.02);
 }
 
 .primary:active:not(:disabled) {
-    transform: translateY(0);
+    transform: translateY(0) scale(0.98);
 }
 
 /* Secondary Variant */
@@ -46,7 +46,14 @@
 }
 
 .secondary:hover:not(:disabled) {
-    background: var(--border-muted);
+    background: var(--bg-elevated);
+    border-color: rgba(var(--primary-rgb), 0.5);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.secondary:active:not(:disabled) {
+    transform: translateY(0);
 }
 
 /* Ghost Variant */
@@ -56,8 +63,8 @@
 }
 
 .ghost:hover:not(:disabled) {
-    background: var(--bg-surface);
-    color: var(--text-main);
+    background: rgba(var(--primary-rgb), 0.05);
+    color: var(--primary);
 }
 
 /* Danger Variant */

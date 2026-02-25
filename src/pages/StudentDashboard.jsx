@@ -43,32 +43,36 @@ export const StudentDashboard = () => {
 
     // Simple HTML structure for the certificate
     tempDiv.innerHTML = `
-      <div id="temp-cert" style="
+        <div id="temp-cert" style="
         width: 800px;
         height: 565px;
-        background: #1e1e2d;
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
         color: white;
         padding: 40px;
-        font-family: sans-serif;
+        font-family: 'Inter', sans-serif;
         text-align: center;
-        border: 2px solid #3b82f6;
-        border-radius: 8px;
+        border: 12px solid rgba(79, 70, 229, 0.4);
+        border-radius: 16px;
         position: relative;
         box-sizing: border-box;
+        box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
       ">
-        <div style="font-size: 60px; margin-bottom: 20px;">🎓</div>
-        <h2 style="font-size: 36px; margin: 0 0 20px 0; color: #fff;">Certificate of Achievement</h2>
-        <p style="color: #94a3b8; font-size: 18px; margin: 0 0 10px 0;">This is to certify that</p>
-        <h3 style="font-size: 28px; color: #3b82f6; margin: 0 0 30px 0;">${achievement.studentName || student.name}</h3>
-        <p style="color: #94a3b8; font-size: 18px; margin: 0 0 10px 0;">has successfully achieved</p>
-        <h4 style="font-size: 24px; color: #fff; margin: 0 0 30px 0;">${achievement.position} in ${achievement.activity}</h4>
-        <div style="margin-top: 20px;">
-          <span style="padding: 4px 12px; background: #151521; border: 1px solid #2a2a3c; border-radius: 20px; font-size: 14px; margin-right: 10px;">${achievement.category}</span>
-          <span style="padding: 4px 12px; background: #151521; border: 1px solid #2a2a3c; border-radius: 20px; font-size: 14px;">${achievement.level} Level</span>
+        <div style="font-size: 64px; margin-bottom: 24px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">🏆</div>
+        <h2 style="font-size: 42px; margin: 0 0 16px 0; color: #fff; font-weight: 800; letter-spacing: 1px;">Certificate of Excellence</h2>
+        <p style="color: #94a3b8; font-size: 20px; margin: 0 0 8px 0; font-style: italic;">Proudly presented to</p>
+        <h3 style="font-size: 36px; color: #818cf8; margin: 0 0 24px 0; font-weight: 700; text-transform: uppercase;">${achievement.studentName || student.name}</h3>
+        <p style="color: #94a3b8; font-size: 18px; margin: 0 0 16px 0;">for outstanding performance and achieving</p>
+        <h4 style="font-size: 28px; color: #f8fafc; margin: 0 0 32px 0; font-weight: 600;">${achievement.position} in ${achievement.activity}</h4>
+        <div style="margin-top: 24px;">
+          <span style="padding: 6px 16px; background: rgba(79, 70, 229, 0.2); border: 1px solid rgba(79, 70, 229, 0.5); border-radius: 24px; font-size: 15px; margin-right: 12px; color: #c7d2fe; font-weight: 500;">${achievement.category}</span>
+          <span style="padding: 6px 16px; background: rgba(236, 72, 153, 0.2); border: 1px solid rgba(236, 72, 153, 0.5); border-radius: 24px; font-size: 15px; color: #fbcfe8; font-weight: 500;">${achievement.level} Level</span>
         </div>
-        <div style="position: absolute; bottom: 40px; right: 40px; text-align: right;">
-          <p style="color: #94a3b8; font-size: 14px; margin: 0 0 5px 0;">Date Awarded</p>
-          <p style="color: #fff; font-size: 16px; font-weight: bold; margin: 0;">${new Date(achievement.date).toLocaleDateString()}</p>
+        <div style="position: absolute; bottom: 40px; right: 40px; text-align: right; border-top: 2px solid rgba(255,255,255,0.1); padding-top: 8px;">
+          <p style="color: #94a3b8; font-size: 14px; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 1px;">Date Awarded</p>
+          <p style="color: #f1f5f9; font-size: 18px; font-weight: 700; margin: 0;">${new Date(achievement.date).toLocaleDateString()}</p>
+        </div>
+        <div style="position: absolute; bottom: 40px; left: 40px; text-align: left;">
+            <div style="width: 80px; height: 80px; border-radius: 50%; border: 2px dashed rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 12px; color: rgba(255,255,255,0.4); transform: rotate(-15deg);">Verified</div>
         </div>
       </div>
     `;
@@ -101,18 +105,15 @@ export const StudentDashboard = () => {
         animate={{ opacity: 1, y: 0 }}
         style={{ marginBottom: 'var(--spacing-8)' }}
       >
-        <div style={{
-          background: 'var(--bg-elevated)',
-          border: '1px solid var(--border-default)',
-          borderRadius: 'var(--radius-xl)',
+        <div className="glass-panel" style={{
           padding: 'var(--spacing-6)'
         }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--spacing-4)' }}>
             <div>
-              <h1 style={{ fontSize: '1.875rem', fontWeight: '700', color: 'var(--text-light)', margin: 0 }}>Welcome, {user?.name || student.name}!</h1>
-              <p style={{ color: 'var(--text-muted)', marginTop: 'var(--spacing-1)', margin: 0 }}>Track and celebrate your achievements</p>
+              <h1 style={{ fontSize: '2rem', fontWeight: '800', color: 'var(--text-light)', margin: 0, letterSpacing: '-0.02em' }}>Welcome, {user?.name || student.name}!</h1>
+              <p style={{ color: 'var(--text-muted)', marginTop: 'var(--spacing-1)', margin: 0, fontSize: '1.125rem' }}>Track and celebrate your achievements</p>
             </div>
-            <div style={{ fontSize: '2.25rem' }}>🎓</div>
+            <div style={{ fontSize: '2.5rem' }} className="animate-float">🎓</div>
           </div>
         </div>
       </motion.div>
@@ -272,7 +273,7 @@ export const StudentDashboard = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card style={{ padding: 'var(--spacing-4)' }}>
+                <Card style={{ padding: 'var(--spacing-4)' }} className="glass-panel">
                   <div style={{ display: 'flex', gap: 'var(--spacing-4)' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'linear-gradient(to right, var(--primary), var(--secondary))', marginTop: '8px' }} />
@@ -314,7 +315,7 @@ export const StudentDashboard = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card hoverable style={{ overflow: 'hidden', padding: 'var(--spacing-4)' }}>
+              <Card hoverable className="glass-panel" style={{ overflow: 'hidden', padding: 'var(--spacing-4)' }}>
                 <div style={{
                   aspectRatio: '16/9',
                   background: 'linear-gradient(to bottom right, var(--primary), var(--secondary))',
