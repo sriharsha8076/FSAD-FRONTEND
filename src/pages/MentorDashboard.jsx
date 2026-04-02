@@ -1,61 +1,106 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Card, Button, useToast } from '../components';
 import { ChartContainer, CustomTooltip } from '../components/ChartContainer';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { Users, Award, TrendingUp, Clock, CheckCircle, XCircle, MessageSquare, FileText, Check } from 'lucide-react';
 import { useAuth } from '../utils/AuthContext';
 import { Navigate } from 'react-router-dom';
-
 export const MentorDashboard = () => {
     const { user } = useAuth();
     const { addToast } = useToast();
+    const [pendingVerifications, setPendingVerifications] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [dashboardData, setDashboardData] = useState(null);
+    const fetchPendingVerifications = React.useCallback(async () => {
+        try {
+            const [pendingRes, dashboardRes] = await Promise.all([
+                fetch('http://localhost:8080/api/achievements/pending', {
+                    headers: { 'Authorization': `Bearer ${user?.token}` }
+                }),
+                fetch('http://localhost:8080/api/dashboard/mentor', {
+                    headers: { 'Authorization': `Bearer ${user?.token}` }
+                })
+            ]);
+            if (!pendingRes.ok || !dashboardRes.ok) throw new Error('Failed to fetch data');
 
-    const [pendingVerifications, setPendingVerifications] = useState([
-        { id: 1, studentName: 'Alex Johnson', activity: 'State Hackathon', category: 'Technical', level: 'State', date: '2023-10-15', status: 'pending' },
-        { id: 2, studentName: 'Sarah Smith', activity: 'Debate Championship', category: 'Cultural', level: 'National', date: '2023-10-20', status: 'pending' },
-        { id: 3, studentName: 'Michael Brown', activity: 'Basketball Tournament', category: 'Sports', level: 'College', date: '2023-11-02', status: 'pending' },
-        { id: 4, studentName: 'Emily Davis', activity: 'Science Olympiad', category: 'Technical', level: 'National', date: '2023-11-10', status: 'pending' },
-    ]);
+            const pendingData = await pendingRes.json();
+            const dashboardJson = await dashboardRes.json();
 
+            setPendingVerifications(pendingData);
+            setDashboardData(dashboardJson);
+        } catch (error) {
+            console.error('Error loading dashboard data:', error);
+            if (!loading) return;
+            addToast('Error loading dashboard data', 'error');
+        } finally {
+            setLoading(false);
+        }
+    }, [user?.token, loading]); // Removed addToast as it might mutate
+
+    useEffect(() => {
+        if (user?.token) {
+            fetchPendingVerifications();
+        }
+    }, [user?.token]); // Simplified to just user.token
     if (!user || user.role !== 'mentor') {
         return <Navigate to="/" replace />;
     }
-
     // Handle Verification Actions
-    const handleVerify = (id, action) => {
-        setPendingVerifications(prev => prev.filter(v => v.id !== id));
-        if (action === 'approve') {
-            addToast(`Achievement verified successfully.`, 'success');
-        } else {
-            addToast(`Achievement rejected.`, 'error');
+    const handleVerify = async (id, status) => {
+        try {
+            const endpoint = status === 'VERIFIED' ? `verify/${id}` : `deny/${id}`;
+            const response = await fetch(`http://localhost:8080/api/achievements/${endpoint}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${user?.token}`
+                }
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to update status');
+            }
+            setPendingVerifications(prev => prev.filter(v => v.id !== id));
+            if (status === 'VERIFIED') {
+                addToast(`Achievement verified successfully.`, 'success');
+            } else {
+                addToast(`Achievement rejected.`, 'warning');
+            }
+        } catch (error) {
+            console.error('Error updating status:', error);
+            addToast(error.message, 'error');
+        }
+    };
+
+    const handleVerifyAll = async () => {
+        try {
+            const response = await fetch('http://localhost:8080/api/achievements/verify-all', {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${user?.token}`
+                }
+            });
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Failed to verify all achievements');
+            }
+            setPendingVerifications([]);
+            addToast('All pending achievements verified successfully.', 'success');
+        } catch (error) {
+            console.error('Error verifying all:', error);
+            addToast(error.message || 'Error verifying achievements', 'error');
         }
     };
 
     const statCards = [
-        { label: 'Assigned Students', value: '12', icon: Users, color: 'var(--primary)', trend: '+2 this month' },
-        { label: 'Pending Verifications', value: pendingVerifications.length.toString(), icon: Clock, color: 'var(--warning)', trend: 'Action needed' },
-        { label: 'Verified Achievements', value: '48', icon: Award, color: 'var(--success)', trend: '+12 this month' },
-        { label: 'Top Category', value: 'Technical', icon: TrendingUp, color: 'var(--info)', trend: '65% of students' },
+        { label: 'Assigned Students', value: dashboardData?.totalAssignedStudents || 0, icon: Users, color: 'var(--primary)', trend: 'Total students' },
+        { label: 'Pending Verifications', value: dashboardData?.pendingVerifications || 0, icon: Clock, color: 'var(--warning)', trend: 'Action needed' },
+        { label: 'Verified Achievements', value: dashboardData?.approvedCount || 0, icon: Award, color: 'var(--success)', trend: 'Total approved' },
+        { label: 'Total Submissions', value: dashboardData?.totalSubmissions || 0, icon: TrendingUp, color: 'var(--info)', trend: 'All assignments' },
     ];
-
-    // Mock data for charts
-    const categoryData = [
-        { name: 'Technical', value: 45, color: '#3b82f6' },  // Info/Primary
-        { name: 'Sports', value: 25, color: '#10b981' },     // Success
-        { name: 'Cultural', value: 20, color: '#8b5cf6' },    // Purple
-        { name: 'Other', value: 10, color: '#f59e0b' },      // Warning
-    ];
-
-    const monthlyTrends = [
-        { month: 'Jul', verifications: 12 },
-        { month: 'Aug', verifications: 19 },
-        { month: 'Sep', verifications: 15 },
-        { month: 'Oct', verifications: 28 },
-        { month: 'Nov', verifications: 22 },
-        { month: 'Dec', verifications: 35 },
-    ];
-
+    const categoryData = dashboardData?.categoryData || [];
+    const monthlyTrends = dashboardData?.monthlyTrends || [];
     return (
         <div style={{ flex: 1, padding: 'var(--spacing-4)' }}>
             {/* Header & Quick Actions */}
@@ -72,7 +117,6 @@ export const MentorDashboard = () => {
                         Here's an overview of your students' achievements and pending tasks.
                     </p>
                 </div>
-
                 {/* Quick Actions Array */}
                 <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
                     <Button variant="secondary" onClick={() => addToast('Messaging feature coming soon!', 'info')} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -83,7 +127,6 @@ export const MentorDashboard = () => {
                     </Button>
                 </div>
             </motion.div>
-
             {/* Stats Grid */}
             <div style={{
                 display: 'grid',
@@ -114,7 +157,7 @@ export const MentorDashboard = () => {
                             <div style={{
                                 padding: '12px',
                                 borderRadius: '12px',
-                                background: `linear-gradient(135deg, ${stat.color}22, ${stat.color}11)`,
+                                background: `linear-gradient(135deg, ${String(stat.color)}22, ${String(stat.color)}11)`,
                                 color: stat.color
                             }}>
                                 <stat.icon size={24} />
@@ -123,7 +166,6 @@ export const MentorDashboard = () => {
                     </motion.div>
                 ))}
             </div>
-
             {/* Charts Section */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 'var(--spacing-6)', marginBottom: 'var(--spacing-8)' }}>
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
@@ -158,7 +200,6 @@ export const MentorDashboard = () => {
                         </div>
                     </Card>
                 </motion.div>
-
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
                     <Card style={{ padding: 'var(--spacing-6)', height: '100%' }}>
                         <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--text-light)', marginBottom: 'var(--spacing-6)' }}>
@@ -176,7 +217,6 @@ export const MentorDashboard = () => {
                     </Card>
                 </motion.div>
             </div>
-
             {/* Pending Verifications Section */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -189,69 +229,61 @@ export const MentorDashboard = () => {
                             Pending Verifications <span style={{ background: 'var(--warning)', color: '#000', padding: '2px 8px', borderRadius: '12px', fontSize: '0.875rem', marginLeft: '8px' }}>{pendingVerifications.length}</span>
                         </h2>
                         {pendingVerifications.length > 0 && (
-                            <Button variant="secondary" onClick={() => { setPendingVerifications([]); addToast('All achievements verified!', 'success'); }} style={{ fontSize: '0.875rem', padding: '8px 16px' }}>
+                            <Button variant="secondary" onClick={handleVerifyAll} style={{ fontSize: '0.875rem', padding: '8px 16px' }}>
                                 Verify All
                             </Button>
                         )}
                     </div>
-
-                    {pendingVerifications.length === 0 ? (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'center', padding: 'var(--spacing-8) 0', color: 'var(--text-muted)' }}>
-                            <CheckCircle size={48} color="var(--success)" style={{ margin: '0 auto var(--spacing-4) auto', opacity: 0.5 }} />
-                            <p>All caught up! No pending verifications at the moment.</p>
-                        </motion.div>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
-                            <AnimatePresence>
-                                {pendingVerifications.map((item) => (
-                                    <motion.div
-                                        key={item.id}
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: 'auto' }}
-                                        exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
-                                        transition={{ duration: 0.3 }}
-                                        style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            padding: 'var(--spacing-4)',
-                                            background: 'rgba(30, 41, 59, 0.4)',
-                                            borderRadius: 'var(--radius-lg)',
-                                            border: '1px solid var(--card-border)'
-                                        }}
-                                    >
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)' }}>
-                                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold' }}>
-                                                {item.studentName.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <h4 style={{ color: 'var(--text-light)', margin: '0 0 4px 0', fontSize: '1rem', fontWeight: '600' }}>{item.activity}</h4>
-                                                <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.875rem' }}>
-                                                    {item.studentName} • {item.level} Level • {new Date(item.date).toLocaleDateString()}
-                                                </p>
-                                            </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
+                        <AnimatePresence>
+                            {pendingVerifications.map((item) => (
+                                <motion.div
+                                    key={`verification-${item.id}`} // Enforce a strict key structure
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
+                                    transition={{ duration: 0.3 }}
+                                    style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        padding: 'var(--spacing-4)',
+                                        background: 'rgba(30, 41, 59, 0.4)',
+                                        borderRadius: 'var(--radius-lg)',
+                                        border: '1px solid var(--card-border)'
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)' }}>
+                                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold' }}>
+                                            {(item.user?.name || 'S').charAt(0)}
                                         </div>
-                                        <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
-                                            <button
-                                                onClick={() => handleVerify(item.id, 'reject')}
-                                                style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: 'var(--danger)', padding: '8px', borderRadius: 'var(--radius-md)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
-                                                title="Reject"
-                                            >
-                                                <XCircle size={18} />
-                                            </button>
-                                            <button
-                                                onClick={() => handleVerify(item.id, 'approve')}
-                                                style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', color: 'var(--success)', padding: '8px', borderRadius: 'var(--radius-md)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
-                                                title="Verify"
-                                            >
-                                                <Check size={18} />
-                                            </button>
+                                        <div>
+                                            <h4 style={{ color: 'var(--text-light)', margin: '0 0 4px 0', fontSize: '1rem', fontWeight: '600' }}>{item.title}</h4>
+                                            <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.875rem' }}>
+                                                {item.user?.name || 'Student'} • {item.category} • {item.dateAchieved ? new Date(item.dateAchieved).toLocaleDateString() : 'N/A'}
+                                            </p>
                                         </div>
-                                    </motion.div>
-                                ))}
-                            </AnimatePresence>
-                        </div>
-                    )}
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
+                                        <button
+                                            onClick={() => handleVerify(item.id, 'REJECTED')}
+                                            style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: 'var(--danger)', padding: '8px', borderRadius: 'var(--radius-md)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                                            title="Reject"
+                                        >
+                                            <XCircle size={18} />
+                                        </button>
+                                        <button
+                                            onClick={() => handleVerify(item.id, 'VERIFIED')}
+                                            style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', color: 'var(--success)', padding: '8px', borderRadius: 'var(--radius-md)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                                            title="Verify"
+                                        >
+                                            <Check size={18} />
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                    </div>
                 </Card>
             </motion.div>
         </div>

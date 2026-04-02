@@ -12,7 +12,8 @@ export const Sidebar = () => {
 
   // Close sidebar on mobile when route changes
   useEffect(() => {
-    setIsMobileOpen(false);
+    // Rely on location changes to close modal sidebars.
+    setIsMobileOpen(false); // eslint-disable-line
   }, [location.pathname]);
 
   const adminMenuItems = [

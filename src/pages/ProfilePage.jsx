@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { Card, FormInput, useToast, Button } from '../components';
 import { useAuth } from '../utils/AuthContext';
 import { User, Mail, Lock, Phone, Save, Calendar } from 'lucide-react';
-
 export const ProfilePage = () => {
   const { user, updateUser } = useAuth();
   const { addToast } = useToast();
@@ -12,7 +11,6 @@ export const ProfilePage = () => {
   const nameParts = (user?.name || 'John Doe').split(' ');
   const initialFirstName = nameParts[0] || '';
   const initialLastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
-
   const [formData, setFormData] = useState({
     firstName: initialFirstName,
     middleName: '',
@@ -25,8 +23,6 @@ export const ProfilePage = () => {
     newPassword: '',
     photo: user?.photo || null,
   });
-  //123
-
   const hasChanges =
     formData.firstName !== initialFirstName ||
     formData.lastName !== initialLastName ||
@@ -37,12 +33,10 @@ export const ProfilePage = () => {
     formData.mobileNo !== (user?.mobileNo || '+1 (555) 000-0000') ||
     formData.currentPassword !== '' ||
     formData.newPassword !== '';
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
-
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -57,7 +51,6 @@ export const ProfilePage = () => {
       reader.readAsDataURL(file);
     }
   };
-
   const handleSave = () => {
     if (!formData.email || formData.email.trim() === '') {
       addToast('Email Address cannot be empty.', 'error');
@@ -67,7 +60,6 @@ export const ProfilePage = () => {
       addToast('Mobile Number cannot be empty.', 'error');
       return;
     }
-
     const fullName = `${formData.firstName} ${formData.middleName ? formData.middleName + ' ' : ''}${formData.lastName}`.trim();
     updateUser({
       name: fullName,
@@ -85,7 +77,6 @@ export const ProfilePage = () => {
       newPassword: '',
     });
   };
-
   return (
     <div style={{ flex: 1, padding: 'var(--spacing-4)' }}>
       <motion.div
@@ -96,7 +87,6 @@ export const ProfilePage = () => {
         <h1 style={{ fontSize: '1.875rem', fontWeight: '700', color: 'var(--text-light)', margin: '0 0 var(--spacing-2) 0' }}>Profile Settings</h1>
         <p style={{ color: 'var(--text-muted)', margin: 0 }}>Manage your account information</p>
       </motion.div>
-
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--spacing-8)' }}>
         {/* Profile Image & Basic Info */}
         <motion.div
@@ -161,7 +151,6 @@ export const ProfilePage = () => {
                 </span>
               </p>
               <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', margin: '0 0 var(--spacing-6) 0' }}>{formData.email}</p>
-
               <Button
                 variant={isEditing ? 'secondary' : 'primary'}
                 onClick={() => setIsEditing(!isEditing)}
@@ -171,14 +160,13 @@ export const ProfilePage = () => {
               </Button>
             </div>
           </Card>
-
           {/* Account Info */}
           <Card style={{ marginTop: 'var(--spacing-6)', padding: 'var(--spacing-6)' }}>
             <h3 style={{ fontWeight: '700', color: 'var(--text-light)', margin: '0 0 var(--spacing-4) 0' }}>Account Information</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-3)', fontSize: '0.875rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 'var(--spacing-3)', borderBottom: '1px solid var(--card-border)' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Unique ID</span>
-                <span style={{ color: 'var(--text-light)', fontWeight: '600' }}>{user?.id}</span>
+                <span style={{ color: 'var(--text-light)', fontWeight: '600' }}>{user?.uniqueId || user?.id}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 'var(--spacing-3)', borderBottom: '1px solid var(--card-border)' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Account Type</span>
@@ -210,7 +198,6 @@ export const ProfilePage = () => {
             </div>
           </Card>
         </motion.div>
-
         {/* Edit Form */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
@@ -222,17 +209,15 @@ export const ProfilePage = () => {
               <div>
                 <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-light)', margin: '0 0 var(--spacing-6) 0' }}>Personal Information</h2>
               </div>
-
               <FormInput
                 label="Unique ID"
                 type="text"
                 name="id"
-                value={user?.id || ''}
+                value={user?.uniqueId || user?.id || ''}
                 disabled={true}
                 icon={User}
                 id="profileId"
               />
-
               <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '16px' }}>
                 <FormInput
                   label="First Name"
@@ -256,7 +241,6 @@ export const ProfilePage = () => {
                   placeholder="Optional"
                 />
               </div>
-
               <FormInput
                 label="Last Name"
                 type="text"
@@ -267,7 +251,6 @@ export const ProfilePage = () => {
                 icon={User}
                 id="profileLastName"
               />
-
               <FormInput
                 label="Date of Birth"
                 type="date"
@@ -278,7 +261,6 @@ export const ProfilePage = () => {
                 icon={Calendar}
                 id="profileDob"
               />
-
               <FormInput
                 label="Email Address"
                 type="email"
@@ -289,7 +271,6 @@ export const ProfilePage = () => {
                 icon={Mail}
                 id="profileEmail"
               />
-
               <FormInput
                 label="Mobile Number"
                 type="tel"
@@ -300,7 +281,6 @@ export const ProfilePage = () => {
                 icon={Phone}
                 id="profileMobileNo"
               />
-
               {/* Bio */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-light)', marginBottom: 'var(--spacing-2)' }}>Bio</label>
@@ -324,7 +304,6 @@ export const ProfilePage = () => {
                   placeholder="Tell us about yourself..."
                 />
               </div>
-
               {/* Password Section */}
               {isEditing && (
                 <div style={{ marginTop: 'var(--spacing-4)' }}>
@@ -353,7 +332,6 @@ export const ProfilePage = () => {
                   </div>
                 </div>
               )}
-
               {/* Save Button */}
               {isEditing && hasChanges && (
                 <Button
@@ -367,7 +345,6 @@ export const ProfilePage = () => {
               )}
             </div>
           </Card>
-
           {/* Privacy & Security */}
           <Card style={{ marginTop: 'var(--spacing-6)', padding: 'var(--spacing-6)' }}>
             <h3 style={{ fontWeight: '700', color: 'var(--text-light)', margin: '0 0 var(--spacing-4) 0' }}>Privacy & Security</h3>
@@ -396,7 +373,6 @@ export const ProfilePage = () => {
           </Card>
         </motion.div >
       </div >
-
       {/* Danger Zone */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

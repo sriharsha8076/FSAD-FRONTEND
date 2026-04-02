@@ -1,0 +1,42 @@
+﻿
+> fsad@0.0.0 lint
+> eslint .
+
+
+D:\FSAD\fix_imports_pages.js
+  1:12  error  'require' is not defined  no-undef
+  2:14  error  'require' is not defined  no-undef
+
+D:\FSAD\fix_lint.js
+  23:25  error  'process' is not defined  no-undef
+  38:25  error  'process' is not defined  no-undef
+  49:25  error  'process' is not defined  no-undef
+  60:25  error  'process' is not defined  no-undef
+  70:25  error  'process' is not defined  no-undef
+  81:25  error  'process' is not defined  no-undef
+
+D:\FSAD\src\components\Toast.jsx
+  1:27  error  'useEffect' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+D:\FSAD\src\pages\AdminDashboard.jsx
+   2:10  error    'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                         no-unused-vars
+  72:6   warning  React Hook useEffect has a missing dependency: 'fetchAchievements'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\FSAD\src\pages\LandingPage.jsx
+  6:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+D:\FSAD\src\pages\LoginPage.jsx
+  1:17  error  'useState' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+D:\FSAD\src\pages\MentorDashboard.jsx
+  2:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+D:\FSAD\src\pages\StudentDashboard.jsx
+   2:10  error    'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                         no-unused-vars
+  43:6   warning  React Hook useEffect has a missing dependency: 'fetchAchievements'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\FSAD\src\pages\SuperAdminDashboard.jsx
+  2:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+Γ£û 17 problems (15 errors, 2 warnings)
+

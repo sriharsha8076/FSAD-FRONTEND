@@ -4,11 +4,9 @@ import { FormInput, Card, useToast, Button } from '../components';
 import { Upload, CheckCircle } from 'lucide-react';
 import { mockStudents } from '../data/mockData';
 import { useAuth } from '../utils/AuthContext';
-
 export const AddAchievementPage = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
-
   const [formData, setFormData] = useState({
     studentName: isAdmin ? '' : user?.name || '',
     activity: '',
@@ -24,14 +22,12 @@ export const AddAchievementPage = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const { addToast } = useToast();
-
   const categoryOptions = [
     { label: '🏆 Sports', value: 'Sports' },
     { label: '💻 Technical', value: 'Technical' },
     { label: '🎭 Cultural', value: 'Cultural' },
     { label: '📚 Other', value: 'Other' },
   ];
-
   const levelOptions = [
     { label: 'Participation', value: 'Participation' },
     { label: 'College Level', value: 'College' },
@@ -39,12 +35,10 @@ export const AddAchievementPage = () => {
     { label: 'National Level', value: 'National' },
     { label: 'International Level', value: 'International' },
   ];
-
   const studentOptions = mockStudents.map((student) => ({
     label: `${student.name} (${student.studentId})`,
     value: student.name,
   }));
-
   const validateForm = () => {
     const newErrors = {};
     if (!formData.studentName) newErrors.studentName = 'Student name is required';
@@ -60,44 +54,95 @@ export const AddAchievementPage = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
+    if (!user?.token) {
+      addToast('You must be logged in to submit an achievement.', 'error');
+      return;
+    }
+    try {
+      setIsSubmitted(true);
 
-    setIsSubmitted(true);
-    addToast('Achievement added successfully!', 'success');
-    setTimeout(() => {
-      setIsSubmitted(false);
-      setFormData({
-        studentName: isAdmin ? '' : user?.name || '',
-        activity: '',
-        category: '',
-        level: '',
-        position: '',
-        date: '',
-        description: '',
-        certificateFile: null,
-        sharingOption: 'self',
-        mentorId: '',
+      let finalCertificateUrl = null;
+
+      // 1. Upload file if it exists
+      if (formData.certificateFile) {
+        const uploadData = new FormData();
+        uploadData.append('file', formData.certificateFile);
+
+        const uploadResponse = await fetch('http://localhost:8080/api/achievements/upload', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+            // Note: Content-Type is intentionally omitted so fetch sets the correct multipart boundary
+          },
+          body: uploadData
+        });
+
+        const uploadResult = await uploadResponse.json();
+
+        if (!uploadResponse.ok) {
+          throw new Error(uploadResult.message || 'Failed to upload certificate file');
+        }
+
+        // This should be the unique string returned from the backend
+        finalCertificateUrl = uploadResult.message;
+      }
+
+      // 2. Create the achievement record
+      const response = await fetch('http://localhost:8080/api/achievements', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`
+        },
+        body: JSON.stringify({
+          title: formData.activity,
+          description: formData.description,
+          category: formData.category,
+          dateAchieved: formData.date,
+          certificateUrl: finalCertificateUrl,
+          mentorId: (!isAdmin && formData.sharingOption === 'mentor') ? formData.mentorId : null
+        })
       });
-      setErrors({});
-    }, 2000);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to add achievement');
+      }
+      addToast(data.message || 'Achievement added successfully!', 'success');
+      setTimeout(() => {
+        setIsSubmitted(false);
+        setFormData({
+          studentName: isAdmin ? '' : user?.name || '',
+          activity: '',
+          category: '',
+          level: '',
+          position: '',
+          date: '',
+          description: '',
+          certificateFile: null,
+          sharingOption: 'self',
+          mentorId: '',
+        });
+        setErrors({});
+      }, 1000);
+    } catch (error) {
+      addToast(error.message, 'error');
+      setIsSubmitted(false);
+    }
   };
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     setErrors({ ...errors, [name]: '' });
   };
-
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setFormData({ ...formData, certificateFile: file });
     }
   };
-
   return (
     <div style={{ flex: 1, padding: 'var(--spacing-4)' }}>
       <motion.div
@@ -108,7 +153,6 @@ export const AddAchievementPage = () => {
         <h1 style={{ fontSize: '1.875rem', fontWeight: '700', color: 'var(--text-light)', margin: '0 0 var(--spacing-2) 0' }}>Add Achievement</h1>
         <p style={{ color: 'var(--text-muted)', margin: 0 }}>Record a new student achievement</p>
       </motion.div>
-
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--spacing-8)' }}>
         {/* Form */}
         <motion.div
@@ -141,7 +185,6 @@ export const AddAchievementPage = () => {
                   {errors.studentName && <span style={{ color: 'var(--danger)', fontSize: '0.75rem', marginTop: '4px', display: 'block' }}>{errors.studentName}</span>}
                 </div>
               )}
-
               <FormInput
                 label="Activity Name"
                 type="text"
@@ -152,7 +195,6 @@ export const AddAchievementPage = () => {
                 error={errors.activity}
                 id="activity"
               />
-
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-4)' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-light)', marginBottom: 'var(--spacing-2)' }}>Category</label>
@@ -195,7 +237,6 @@ export const AddAchievementPage = () => {
                   {errors.level && <span style={{ color: 'var(--danger)', fontSize: '0.75rem', marginTop: '4px', display: 'block' }}>{errors.level}</span>}
                 </div>
               </div>
-
               <FormInput
                 label="Position/Role"
                 type="text"
@@ -206,7 +247,6 @@ export const AddAchievementPage = () => {
                 error={errors.position}
                 id="position"
               />
-
               <FormInput
                 label="Date of Achievement"
                 type="date"
@@ -216,7 +256,6 @@ export const AddAchievementPage = () => {
                 error={errors.date}
                 id="date"
               />
-
               <FormInput
                 label="Description"
                 type="textarea"
@@ -227,7 +266,6 @@ export const AddAchievementPage = () => {
                 error={errors.description}
                 id="description"
               />
-
               {/* File Upload */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-2)' }}>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-light)' }}>
@@ -264,7 +302,6 @@ export const AddAchievementPage = () => {
                     )}
                   </label>
                 </div>
-
                 {/* Sharing Options (Only for Students who uploaded a file) */}
                 {formData.certificateFile && !isAdmin && (
                   <motion.div
@@ -297,7 +334,6 @@ export const AddAchievementPage = () => {
                         Share with Mentor
                       </label>
                     </div>
-
                     {formData.sharingOption === 'mentor' && (
                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ marginTop: 'var(--spacing-2)' }}>
                         <FormInput
@@ -318,14 +354,12 @@ export const AddAchievementPage = () => {
                   </motion.div>
                 )}
               </div>
-
               <Button type="submit" variant="primary" disabled={isSubmitted} style={{ width: '100%' }}>
                 {isSubmitted ? 'Achievement Added ✓' : 'Add Achievement'}
               </Button>
             </form>
           </Card>
         </motion.div>
-
         {/* Info Sidebar */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
@@ -342,7 +376,6 @@ export const AddAchievementPage = () => {
               <li>• Detailed descriptions help recognition</li>
             </ul>
           </Card>
-
           <Card style={{ padding: 'var(--spacing-4)' }}>
             <h3 style={{ fontWeight: '600', color: 'var(--text-light)', margin: '0 0 var(--spacing-4) 0' }}>📊 Achievement Levels</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-3)' }}>
@@ -369,5 +402,4 @@ export const AddAchievementPage = () => {
     </div>
   );
 };
-
 export default AddAchievementPage;

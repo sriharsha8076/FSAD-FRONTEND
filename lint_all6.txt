@@ -1,0 +1,19 @@
+﻿
+> fsad@0.0.0 lint
+> eslint .
+
+
+D:\FSAD\fix_imports_pages.js
+  1:12  error  'require' is not defined  no-undef
+  2:14  error  'require' is not defined  no-undef
+
+D:\FSAD\fix_lint.js
+  23:25  error  'process' is not defined  no-undef
+  38:25  error  'process' is not defined  no-undef
+  49:25  error  'process' is not defined  no-undef
+  60:25  error  'process' is not defined  no-undef
+  70:25  error  'process' is not defined  no-undef
+  81:25  error  'process' is not defined  no-undef
+
+Γ£û 8 problems (8 errors, 0 warnings)
+

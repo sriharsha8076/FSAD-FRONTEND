@@ -1,0 +1,70 @@
+﻿
+> fsad@0.0.0 lint
+> eslint .
+
+
+D:\FSAD\fix_lint.js
+  23:25  error  'process' is not defined  no-undef
+  38:25  error  'process' is not defined  no-undef
+  49:25  error  'process' is not defined  no-undef
+  60:25  error  'process' is not defined  no-undef
+  70:25  error  'process' is not defined  no-undef
+  81:25  error  'process' is not defined  no-undef
+
+D:\FSAD\src\components\Sidebar.jsx
+  17:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  15 |     // We avoid calling setState unconditionally to not trigger unneeded renders.
+  16 |     // Instead, rely on location changes to close modal sidebars.
+> 17 |     setIsMobileOpen(prev => prev ? false : prev);
+     |     ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  18 |   }, [location.pathname]);
+  19 |
+  20 |   const adminMenuItems = [  react-hooks/set-state-in-effect
+
+D:\FSAD\src\components\Toast.jsx
+   1:27  error  'useEffect' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              no-unused-vars
+   8:25  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+   6 |   const [toasts, setToasts] = useState([]);
+   7 |   const addToast = (message, type = 'success', duration = 3000) => {
+>  8 |     const toast = { id: Date.now(), message, type };
+     |                         ^^^^^^^^^^ Cannot call impure function
+   9 |     setToasts((prev) => [...prev, toast]);
+  10 |     if (duration) {
+  11 |       setTimeout(() => {  react-hooks/purity
+  12:21  error  'id' is not defined                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           no-undef
+  15:12  error  'id' is not defined                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           no-undef
+
+D:\FSAD\src\pages\AdminDashboard.jsx
+  38:14  error    'err' is defined but never used                                                                                       no-unused-vars
+  71:6   warning  React Hook useEffect has a missing dependency: 'fetchAchievements'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\FSAD\src\pages\LoginPage.jsx
+  1:17  error  'useState' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+D:\FSAD\src\pages\MentorDashboard.jsx
+  14:11  warning  The 'fetchPendingVerifications' function makes the dependencies of useEffect Hook (at line 35) change on every render. Move it inside the useEffect callback. Alternatively, wrap the definition of 'fetchPendingVerifications' in its own useCallback() Hook  react-hooks/exhaustive-deps
+
+D:\FSAD\src\pages\RegisterPage.jsx
+   7:10  error    'generateStudentId' is defined but never used. Allowed unused vars must match /^[A-Z_]/u             no-unused-vars
+   7:29  error    'generateMentorId' is defined but never used. Allowed unused vars must match /^[A-Z_]/u              no-unused-vars
+  53:3   warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/incompatible-library')
+
+D:\FSAD\src\pages\StudentDashboard.jsx
+  42:6  warning  React Hook useEffect has a missing dependency: 'fetchAchievements'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\FSAD\src\pages\SuperAdminDashboard.jsx
+  1:38  error  'useCallback' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+Γ£û 20 problems (16 errors, 4 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

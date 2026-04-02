@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, FormInput, Button, Table } from '../components';
 import { useAuth } from '../utils/AuthContext';
@@ -7,23 +7,21 @@ import { UserPlus, Shield, Building, Trash2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { generateStudentId } from '../utils/idGenerator';
-
 const adminSchema = z.object({
     id: z.string().min(1, 'Admin ID/Username is required'),
     name: z.string().min(1, 'University/Admin Name is required'),
     email: z.string().email('Invalid email format'),
     password: z.string().min(6, 'Password must be at least 6 characters'),
 });
-
 export const SuperAdminDashboard = () => {
-    const { user, usersDB, createUniversityAdmin, deleteUniversityAdmin } = useAuth();
+    const { usersDB, createUniversityAdmin, deleteUniversityAdmin, fetchAdmins } = useAuth();
     const { addToast } = useToast();
     const [isCreating, setIsCreating] = useState(false);
-
-    // Filter out the admins
-    const universityAdmins = usersDB.filter(u => u.role === 'admin');
-
+    useEffect(() => {
+        fetchAdmins();
+    }, [fetchAdmins]);
+    // Filter out the admins based on actual backend data
+    const universityAdmins = usersDB || [];
     const {
         register,
         handleSubmit,
@@ -38,11 +36,10 @@ export const SuperAdminDashboard = () => {
             password: '',
         }
     });
-
-    const onSubmit = (data) => {
+    const onSubmit = async (data) => {
         setIsCreating(true);
         try {
-            createUniversityAdmin(data);
+            await createUniversityAdmin(data);
             addToast(`University Admin created successfully!`, 'success');
             reset(); // Clear the form
         } catch (error) {
@@ -50,23 +47,20 @@ export const SuperAdminDashboard = () => {
         }
         setIsCreating(false);
     };
-
-    const handleDelete = (adminId, adminName) => {
+    const handleDelete = async (adminId, adminName) => {
         if (window.confirm(`Are you sure you want to completely delete the University Admin account for ${adminName} (${adminId})?\n\nThis action cannot be undone.`)) {
             try {
-                deleteUniversityAdmin(adminId);
+                await deleteUniversityAdmin(adminId);
                 addToast(`Successfully deleted admin: ${adminName}`, 'success');
             } catch (error) {
                 addToast(error.message, 'error');
             }
         }
     };
-
     const columns = [
         { key: 'id', label: 'Admin ID / University Code' },
         { key: 'name', label: 'University Name' },
         { key: 'email', label: 'Admin Email' },
-        { key: 'createdAt', label: 'Created At', render: (item) => new Date(item.createdAt).toLocaleDateString() },
         {
             key: 'actions',
             label: 'Actions',
@@ -92,7 +86,6 @@ export const SuperAdminDashboard = () => {
             )
         },
     ];
-
     return (
         <div style={{ flex: 1, padding: 'var(--spacing-4)' }}>
             {/* Header */}
@@ -111,9 +104,7 @@ export const SuperAdminDashboard = () => {
                     </div>
                 </div>
             </motion.div>
-
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--spacing-8)' }}>
-
                 {/* Create New Admin Form */}
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
@@ -125,7 +116,6 @@ export const SuperAdminDashboard = () => {
                             <UserPlus size={24} color="var(--text-light)" />
                             <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--text-light)', margin: 0 }}>Create University Admin</h2>
                         </div>
-
                         <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
                             <FormInput
                                 label="Admin ID (University Code)"
@@ -161,7 +151,6 @@ export const SuperAdminDashboard = () => {
                         </form>
                     </Card>
                 </motion.div>
-
                 {/* Active Admins List */}
                 <motion.div
                     initial={{ opacity: 0, x: 20 }}
@@ -173,7 +162,6 @@ export const SuperAdminDashboard = () => {
                             <Building size={24} color="var(--text-light)" />
                             <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--text-light)', margin: 0 }}>Active Universities</h2>
                         </div>
-
                         {universityAdmins.length > 0 ? (
                             <Table
                                 columns={columns}
@@ -187,7 +175,6 @@ export const SuperAdminDashboard = () => {
                         )}
                     </Card>
                 </motion.div>
-
             </div>
         </div>
     );

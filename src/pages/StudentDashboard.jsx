@@ -1,46 +1,112 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { StatCard, ChartCard, Card, Button } from '../components';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { mockStudents, mockAchievements, categoryDistributionData } from '../data/mockData';
-import { Award, Filter, Download, Calendar, Plus } from 'lucide-react';
+import { StatCard, ChartCard, AchievementCard, Card, Button } from '../components';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { Award, Filter, Download, Calendar, Plus, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../utils/AuthContext';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-
 export const StudentDashboard = () => {
-  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [studentAchievements, setStudentAchievements] = useState([]);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const { addToast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
-
-  const student = mockStudents[0]; // Get first student as example (keep for mock stats)
-  const studentAchievements = mockAchievements.slice(0, 3); // Mock achievements for student
-
   const COLORS = ['var(--primary)', 'var(--secondary)', 'var(--warning)', 'var(--success)'];
-
   const stats = [
-    { label: 'Total Achievements', value: student.totalAchievements, icon: Award, color: 'from-purple-500 to-indigo-600' },
+    { label: 'Total Achievements', value: dashboardData?.totalAchievements || 0, icon: Award, color: 'from-purple-500 to-indigo-600' },
+    { label: 'Verified', value: dashboardData?.verifiedCount || 0, icon: CheckCircle, color: 'from-green-500 to-green-600' },
+    { label: 'Pending', value: dashboardData?.pendingCount || 0, icon: Clock, color: 'from-yellow-500 to-yellow-600' },
+    { label: 'Rejected', value: dashboardData?.rejectedCount || 0, icon: XCircle, color: 'from-red-500 to-red-600' }
   ];
+  useEffect(() => {
+    const fetchAchievements = async () => {
+      try {
+        const [achievementsRes, dashboardRes] = await Promise.all([
+          fetch('http://localhost:8080/api/achievements/my', {
+            headers: { 'Authorization': `Bearer ${user?.token}` }
+          }),
+          fetch('http://localhost:8080/api/dashboard/student', {
+            headers: { 'Authorization': `Bearer ${user?.token}` }
+          })
+        ]);
+        if (!achievementsRes.ok || !dashboardRes.ok) throw new Error('Failed to fetch data');
 
+        const achievementsData = await achievementsRes.json();
+        const dashboardJson = await dashboardRes.json();
+
+        setStudentAchievements(achievementsData);
+        setDashboardData(dashboardJson);
+      } catch (error) {
+        console.error(error);
+        addToast('Error loading dashboard data', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user?.token) {
+      fetchAchievements();
+    }
+  }, [user, addToast]);
   const badges = [
     { name: 'Rising Star', description: '5+ Achievements' },
     { name: 'Team Player', description: 'Sports Category' },
     { name: 'Tech Master', description: 'Technical Excellence' },
   ];
-
   const handleDownloadCertificate = async (achievement) => {
-    addToast(`Generating certificate for ${achievement.activity}...`, 'info');
+    // If an uploaded certificate exists, download it
+    if (achievement.certificateUrl && achievement.certificateUrl.trim() !== '') {
+      addToast(`Preparing to download certificate...`, 'info');
 
+      try {
+        const response = await fetch(`http://localhost:8080/api/achievements/${achievement.id}/file`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${user?.token}`
+          }
+        });
+
+        if (!response.ok) {
+          if (response.status === 403) throw new Error("Unauthorized to access this file.");
+          if (response.status === 404) throw new Error("File not found on server.");
+          throw new Error('Failed to download file');
+        }
+
+        // Extract filename from disposition if available
+        const disposition = response.headers.get('Content-Disposition');
+        let filename = achievement.certificateUrl;
+        if (disposition && disposition.indexOf('attachment') !== -1) {
+          const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+          const matches = filenameRegex.exec(disposition);
+          if (matches != null && matches[1]) filename = matches[1].replace(/['"]/g, '');
+        }
+
+        const blob = await response.blob();
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(link.href);
+
+        addToast('Certificate downloaded successfully!', 'success');
+      } catch (err) {
+        console.error("Download Error:", err);
+        addToast(err.message || 'Failed to download certificate from server.', 'error');
+      }
+      return;
+    }
+
+    addToast(`Generating certificate for ${achievement.title || achievement.activity}...`, 'info');
     // Create a temporary hidden div to render the certificate
     const tempDiv = document.createElement('div');
     tempDiv.style.position = 'absolute';
     tempDiv.style.left = '-9999px';
     tempDiv.style.top = '-9999px';
     document.body.appendChild(tempDiv);
-
     // Simple HTML structure for the certificate
     tempDiv.innerHTML = `
         <div id="temp-cert" style="
@@ -60,9 +126,9 @@ export const StudentDashboard = () => {
         <div style="font-size: 64px; margin-bottom: 24px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">🏆</div>
         <h2 style="font-size: 42px; margin: 0 0 16px 0; color: #fff; font-weight: 800; letter-spacing: 1px;">Certificate of Excellence</h2>
         <p style="color: #94a3b8; font-size: 20px; margin: 0 0 8px 0; font-style: italic;">Proudly presented to</p>
-        <h3 style="font-size: 36px; color: #818cf8; margin: 0 0 24px 0; font-weight: 700; text-transform: uppercase;">${achievement.studentName || student.name}</h3>
+        <h3 style="font-size: 36px; color: #818cf8; margin: 0 0 24px 0; font-weight: 700; text-transform: uppercase;">${user?.name || "Student"}</h3>
         <p style="color: #94a3b8; font-size: 18px; margin: 0 0 16px 0;">for outstanding performance and achieving</p>
-        <h4 style="font-size: 28px; color: #f8fafc; margin: 0 0 32px 0; font-weight: 600;">${achievement.position} in ${achievement.activity}</h4>
+        <h4 style="font-size: 28px; color: #f8fafc; margin: 0 0 32px 0; font-weight: 600;">${achievement.description || achievement.title}</h4>
         <div style="margin-top: 24px;">
           <span style="padding: 6px 16px; background: rgba(79, 70, 229, 0.2); border: 1px solid rgba(79, 70, 229, 0.5); border-radius: 24px; font-size: 15px; margin-right: 12px; color: #c7d2fe; font-weight: 500;">${achievement.category}</span>
           <span style="padding: 6px 16px; background: rgba(236, 72, 153, 0.2); border: 1px solid rgba(236, 72, 153, 0.5); border-radius: 24px; font-size: 15px; color: #fbcfe8; font-weight: 500;">${achievement.level} Level</span>
@@ -76,18 +142,15 @@ export const StudentDashboard = () => {
         </div>
       </div>
     `;
-
     try {
       const certElement = document.getElementById('temp-cert');
       const canvas = await html2canvas(certElement, { scale: 2 });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('l', 'mm', 'a4');
-
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`${achievement.studentName || student.name}_${achievement.activity}_Certificate.pdf`);
+      pdf.save(`${user?.name || 'Student'}_${achievement.title}_Certificate.pdf`);
       addToast('Certificate downloaded successfully!', 'success');
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -96,7 +159,6 @@ export const StudentDashboard = () => {
       document.body.removeChild(tempDiv);
     }
   };
-
   return (
     <div style={{ flex: 1, padding: 'var(--spacing-4)' }}>
       {/* Welcome Section */}
@@ -110,14 +172,13 @@ export const StudentDashboard = () => {
         }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--spacing-4)' }}>
             <div>
-              <h1 style={{ fontSize: '2rem', fontWeight: '800', color: 'var(--text-light)', margin: 0, letterSpacing: '-0.02em' }}>Welcome, {user?.name || student.name}!</h1>
+              <h1 style={{ fontSize: '2rem', fontWeight: '800', color: 'var(--text-light)', margin: 0, letterSpacing: '-0.02em' }}>Welcome, {user?.name || 'Student'}!</h1>
               <p style={{ color: 'var(--text-muted)', marginTop: 'var(--spacing-1)', margin: 0, fontSize: '1.125rem' }}>Track and celebrate your achievements</p>
             </div>
             <div style={{ fontSize: '2.5rem' }} className="animate-float">🎓</div>
           </div>
         </div>
       </motion.div>
-
       {/* Statistics */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -141,7 +202,6 @@ export const StudentDashboard = () => {
           ))}
         </div>
       </motion.div>
-
       {/* Main Grid */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -160,7 +220,7 @@ export const StudentDashboard = () => {
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
-                  data={categoryDistributionData}
+                  data={dashboardData?.categoryDistributionData || []}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -171,8 +231,8 @@ export const StudentDashboard = () => {
                   stroke="var(--bg-dark)"
                   strokeWidth={2}
                 >
-                  {categoryDistributionData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  {dashboardData?.categoryDistributionData?.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip
@@ -189,6 +249,23 @@ export const StudentDashboard = () => {
           </ChartCard>
         </motion.div>
 
+        {/* Monthly Achievements Bar Chart */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ gridColumn: '1 / -1', '@media (min-width: 1024px)': { gridColumn: 'span 2' } }}>
+          <ChartCard title="Monthly Trends" subtitle="Achievements earned per month">
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={dashboardData?.monthlyAchievementsData || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--card-border)" vertical={false} />
+                <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: 'var(--bg-dark)', border: '1px solid var(--card-border)', borderRadius: 'var(--radius-md)' }}
+                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                />
+                <Bar dataKey="achievements" fill="var(--primary)" radius={[4, 4, 0, 0]} name="Achievements" />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        </motion.div>
         {/* Badges & Achievements */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ gridColumn: '1 / -1', '@media (min-width: 1024px)': { gridColumn: 'span 2' } }}>
           <ChartCard title="Achievement Badges" subtitle="Your earned recognition">
@@ -235,7 +312,6 @@ export const StudentDashboard = () => {
           </ChartCard>
         </motion.div>
       </motion.div>
-
       {/* Timeline & Recent Achievements */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div style={{ marginBottom: 'var(--spacing-6)' }}>
@@ -263,7 +339,6 @@ export const StudentDashboard = () => {
               </Button>
             </div>
           </div>
-
           {/* Timeline */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
             {studentAchievements.map((achievement, index) => (
@@ -283,31 +358,33 @@ export const StudentDashboard = () => {
                     </div>
                     <div style={{ flex: 1, paddingBottom: 'var(--spacing-4)' }}>
                       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--spacing-2)', marginBottom: 'var(--spacing-2)' }}>
-                        <h3 style={{ fontWeight: '600', color: 'var(--text-light)', fontSize: '1.125rem', margin: 0 }}>{achievement.activity}</h3>
+                        <h3 style={{ fontWeight: '600', color: 'var(--text-light)', fontSize: '1.125rem', margin: 0 }}>{achievement.title}</h3>
                         <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
-                          <span style={{ padding: '2px 8px', borderRadius: '9999px', fontSize: '0.75rem', background: 'var(--bg-surface)', color: 'var(--text-main)', border: '1px solid var(--border-default)' }}>{achievement.level}</span>
-                          <span style={{ padding: '2px 8px', borderRadius: '9999px', fontSize: '0.75rem', background: 'var(--success-bg)', color: 'var(--success)', border: '1px solid var(--success)' }}>{achievement.status}</span>
+                          <span style={{ padding: '2px 8px', borderRadius: '9999px', fontSize: '0.75rem', background: 'var(--bg-surface)', color: 'var(--text-main)', border: '1px solid var(--border-default)' }}>{achievement.category}</span>
+                          <span style={{ padding: '2px 8px', borderRadius: '9999px', fontSize: '0.75rem', background: achievement.status === 'VERIFIED' ? 'var(--success-bg)' : 'var(--warning-bg)', color: achievement.status === 'VERIFIED' ? 'var(--success)' : 'var(--warning)', border: `1px solid ${achievement.status === 'VERIFIED' ? 'var(--success)' : 'var(--warning)'}` }}>{achievement.status}</span>
                         </div>
                       </div>
-                      <p style={{ fontSize: '0.875rem', color: 'var(--text-light)', opacity: 0.8, margin: '0 0 var(--spacing-2) 0' }}>{achievement.category} • {achievement.position}</p>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>📅 {new Date(achievement.date).toLocaleDateString()}</p>
+                      <p style={{ fontSize: '0.875rem', color: 'var(--text-light)', opacity: 0.8, margin: '0 0 var(--spacing-2) 0' }}>{achievement.description}</p>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>📅 {achievement.dateAchieved ? new Date(achievement.dateAchieved).toLocaleDateString() : 'N/A'}</p>
                     </div>
                   </div>
                 </Card>
               </motion.div>
             ))}
+            {studentAchievements.length === 0 && !loading && (
+              <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 'var(--spacing-4)' }}>No achievements yet. Start adding some!</p>
+            )}
+            {loading && <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>Loading...</p>}
           </div>
         </div>
       </motion.div>
-
       {/* Certificates Section */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 'var(--spacing-8)' }}>
         <div style={{ marginBottom: 'var(--spacing-4)' }}>
           <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-light)', margin: 0 }}>Certificates</h2>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', margin: 0 }}>View and download your achievement certificates</p>
         </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-4)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--spacing-4)' }}>
           {studentAchievements.map((achievement, index) => (
             <motion.div
               key={achievement.id}
@@ -327,8 +404,8 @@ export const StudentDashboard = () => {
                 }}>
                   <span style={{ fontSize: '1.875rem' }}>📜</span>
                 </div>
-                <h3 style={{ fontWeight: '600', color: 'var(--text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: '0 0 var(--spacing-1) 0' }}>{achievement.activity}</h3>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 var(--spacing-4) 0' }}>{new Date(achievement.date).toLocaleDateString()}</p>
+                <h3 style={{ fontWeight: '600', color: 'var(--text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: '0 0 var(--spacing-1) 0' }}>{achievement.title}</h3>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 var(--spacing-4) 0' }}>{achievement.dateAchieved ? new Date(achievement.dateAchieved).toLocaleDateString() : 'N/A'}</p>
                 <Button
                   variant="secondary"
                   onClick={() => handleDownloadCertificate(achievement)}

@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { Card, ChartCard, StatCard } from '../components';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Users, Award } from 'lucide-react';
-
 export const AnalyticsPage = () => {
   const analyticsData = [
     { month: 'Jan', views: 4000, engagement: 2400 },
@@ -13,13 +12,11 @@ export const AnalyticsPage = () => {
     { month: 'May', views: 1890, engagement: 4800 },
     { month: 'Jun', views: 2390, engagement: 3800 },
   ];
-
   const stats = [
     { label: 'Total Views', value: '24.5K', trend: 12, icon: Users, color: 'from-purple-500 to-indigo-600' },
     { label: 'Engagement Rate', value: '68%', trend: 8, icon: TrendingUp, color: 'from-blue-500 to-cyan-600' },
     { label: 'Active Users', value: '1.2K', trend: 15, icon: Award, color: 'from-emerald-500 to-teal-600' },
   ];
-
   return (
     <div style={{ flex: 1, padding: 'var(--spacing-4)' }}>
       {/* Header */}
@@ -31,7 +28,6 @@ export const AnalyticsPage = () => {
         <h1 style={{ fontSize: '1.875rem', fontWeight: '700', color: 'var(--text-light)', margin: '0 0 var(--spacing-2) 0' }}>Analytics</h1>
         <p style={{ color: 'var(--text-muted)', margin: 0 }}>Detailed insights and performance metrics</p>
       </motion.div>
-
       {/* Stats Cards */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -60,7 +56,6 @@ export const AnalyticsPage = () => {
           </motion.div>
         ))}
       </motion.div>
-
       {/* Charts */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -93,7 +88,6 @@ export const AnalyticsPage = () => {
             </ResponsiveContainer>
           </ChartCard>
         </motion.div>
-
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <ChartCard title="Engagement Analysis" subtitle="User interaction metrics">
             <ResponsiveContainer width="100%" height={300}>

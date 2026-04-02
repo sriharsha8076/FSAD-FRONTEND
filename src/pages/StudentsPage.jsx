@@ -4,18 +4,15 @@ import { Card, FormInput, Button } from '../components';
 import { mockStudents } from '../data/mockData';
 import { Search, Filter, Mail, Phone } from 'lucide-react';
 import { useToast } from '../components/Toast';
-
 export const StudentsPage = () => {
   const { addToast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('name');
-
   const filteredStudents = mockStudents.filter((student) =>
     student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     student.studentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
     student.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
   const sortedStudents = [...filteredStudents].sort((a, b) => {
     switch (sortBy) {
       case 'achievements':
@@ -26,7 +23,6 @@ export const StudentsPage = () => {
         return a.name.localeCompare(b.name);
     }
   });
-
   return (
     <div style={{ flex: 1, padding: 'var(--spacing-4)' }}>
       {/* Header */}
@@ -38,7 +34,6 @@ export const StudentsPage = () => {
         <h1 style={{ fontSize: '1.875rem', fontWeight: '700', color: 'var(--text-light)', margin: 0 }}>Students</h1>
         <p style={{ color: 'var(--text-muted)', marginTop: 'var(--spacing-1)', margin: 0 }}>Manage and view student profiles</p>
       </motion.div>
-
       {/* Search and Filter */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -56,7 +51,6 @@ export const StudentsPage = () => {
               id="studentSearch"
             />
           </div>
-
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-4)' }}>
             <div style={{ flex: '1 1 200px' }}>
               <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-light)', marginBottom: 'var(--spacing-2)' }}>Sort By</label>
@@ -92,7 +86,6 @@ export const StudentsPage = () => {
           </div>
         </Card>
       </motion.div>
-
       {/* Students Grid */}
       {sortedStudents.length > 0 ? (
         <motion.div
@@ -127,7 +120,6 @@ export const StudentsPage = () => {
                     }}
                   />
                 </div>
-
                 {/* Student Info */}
                 <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-2)' }}>
                   <h3 style={{ fontSize: '1.125rem', fontWeight: '700', color: 'var(--text-light)', margin: 0 }}>{student.name}</h3>
@@ -137,7 +129,6 @@ export const StudentsPage = () => {
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{student.email}</span>
                   </div>
                 </div>
-
                 {/* Achievements */}
                 <div style={{
                   background: 'var(--bg-surface)',
@@ -149,7 +140,6 @@ export const StudentsPage = () => {
                   <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 var(--spacing-2) 0' }}>Total Achievements</p>
                   <p style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-main)', margin: 0 }}>{student.totalAchievements}</p>
                 </div>
-
                 {/* Category Breakdown */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-2)' }}>
                   <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600', margin: 0 }}>Categories</p>
@@ -162,7 +152,6 @@ export const StudentsPage = () => {
                     ))}
                   </div>
                 </div>
-
                 {/* View Button */}
                 <div style={{ marginTop: 'auto', paddingTop: 'var(--spacing-4)' }}>
                   <Button

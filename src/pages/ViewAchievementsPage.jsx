@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, AchievementCard, Button, FormInput, Modal } from '../components';
-import { mockAchievements } from '../data/mockData';
 import { Search, Filter, Download } from 'lucide-react';
 import { useAuth } from '../utils/AuthContext';
 import { useToast } from '../components/Toast';
@@ -11,6 +10,7 @@ import html2canvas from 'html2canvas';
 export const ViewAchievementsPage = () => {
   const { user } = useAuth();
   const { addToast } = useToast();
+
   const isAdmin = user?.role === 'admin';
   const isMentor = user?.role === 'mentor';
   const isSuperAdmin = user?.role === 'superadmin';
@@ -20,16 +20,83 @@ export const ViewAchievementsPage = () => {
   const [selectedLevel, setSelectedLevel] = useState('');
   const [selectedAchievement, setSelectedAchievement] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const [achievements, setAchievements] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  const itemsPerPage = 6;
   const categories = ['Sports', 'Technical', 'Cultural', 'Other'];
   const levels = ['Participation', 'College', 'State', 'National', 'International'];
 
-  // Mock data tailored for the student view (Mentors and Admins see all)
+  // Mentors and Admins see all achievements bound to them
   const canSeeAll = isAdmin || isMentor || isSuperAdmin;
-  const baseAchievements = canSeeAll ? mockAchievements : mockAchievements.slice(0, 3);
 
-  const filteredAchievements = baseAchievements.filter((achievement) => {
+  React.useEffect(() => {
+    const fetchAchievements = async () => {
+      try {
+        setLoading(true);
+        // Choose endpoint based on role
+        let endpoint = 'http://localhost:8080/api/achievements/my';
+        if (canSeeAll) {
+          endpoint = 'http://localhost:8080/api/achievements/mentor/all';
+        }
+
+        const response = await fetch(endpoint, {
+          headers: {
+            'Authorization': `Bearer ${user?.token}`
+          }
+        });
+        if (!response.ok) throw new Error('Failed to fetch achievements');
+        const data = await response.json();
+
+        // Map database achievements to match the frontend expected component props.
+        // AchievementCard expects: { id, studentName, activity, category, level, position, status, date }
+        const mappedData = data.map(dbA => {
+          let formattedDate = 'N/A';
+          if (dbA.dateAchieved) {
+            try {
+              if (Array.isArray(dbA.dateAchieved)) {
+                formattedDate = `${dbA.dateAchieved[0]}-${String(dbA.dateAchieved[1]).padStart(2, '0')}-${String(dbA.dateAchieved[2]).padStart(2, '0')}`;
+              } else if (typeof dbA.dateAchieved === 'string') {
+                formattedDate = dbA.dateAchieved.split('T')[0];
+              } else {
+                formattedDate = new Date(dbA.dateAchieved).toISOString().split('T')[0];
+              }
+            } catch (e) {
+              console.error("Date format error:", e);
+            }
+          }
+
+          return {
+            id: dbA.id,
+            studentName: dbA.user?.name || 'Unknown Student',
+            activity: dbA.title || 'Untitled',
+            description: dbA.description,
+            category: dbA.category || 'Other',
+            level: 'Participation',
+            position: dbA.status === 'VERIFIED' ? 'Verified' : dbA.status === 'PENDING' ? 'Pending' : 'Rejected',
+            status: dbA.status ? dbA.status.toLowerCase() : 'pending',
+            date: formattedDate,
+            certificateUrl: dbA.certificateUrl
+          };
+        });
+
+        setAchievements(mappedData);
+      } catch (error) {
+        console.error('Error fetching viewing achievements:', error);
+        addToast('Failed to load achievements', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user?.token) {
+      fetchAchievements();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.token, canSeeAll]);
+
+
+  const filteredAchievements = achievements.filter((achievement) => {
     const matchesSearch =
       achievement.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       achievement.activity.toLowerCase().includes(searchQuery.toLowerCase());
@@ -53,6 +120,7 @@ export const ViewAchievementsPage = () => {
     if (!certificateElement) return;
 
     addToast('Generating PDF certificate...', 'info');
+
     try {
       const canvas = await html2canvas(certificateElement, { scale: 2 });
       const imgData = canvas.toDataURL('image/png');
@@ -63,6 +131,7 @@ export const ViewAchievementsPage = () => {
 
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`${selectedAchievement.studentName}_${selectedAchievement.activity}_Certificate.pdf`);
+
       addToast('Certificate downloaded successfully!', 'success');
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -210,28 +279,33 @@ export const ViewAchievementsPage = () => {
           gap: 'var(--spacing-6)'
         }}
       >
-        {
-          paginatedAchievements.length > 0 ? (
-            paginatedAchievements.map((achievement, index) => (
-              <motion.div
-                key={achievement.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                onClick={() => setSelectedAchievement(achievement)}
-                style={{ cursor: 'pointer', height: '100%' }}
-              >
-                <AchievementCard achievement={achievement} style={{ height: '100%' }} />
-              </motion.div>
-            ))
-          ) : (
-            <div style={{ gridColumn: '1 / -1' }}>
-              <Card style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
-                <p style={{ color: 'var(--text-muted)', fontSize: '1.125rem', margin: 0 }}>No achievements found</p>
-                <p style={{ color: 'var(--text-muted)', opacity: 0.7, fontSize: '0.875rem', marginTop: 'var(--spacing-2)', margin: 0 }}>Try adjusting your filters</p>
-              </Card>
-            </div>
-          )
+        {loading ? (
+          <div style={{ gridColumn: '1 / -1' }}>
+            <Card style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '1.125rem', margin: 0 }}>Loading achievements...</p>
+            </Card>
+          </div>
+        ) : paginatedAchievements.length > 0 ? (
+          paginatedAchievements.map((achievement, index) => (
+            <motion.div
+              key={achievement.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              onClick={() => setSelectedAchievement(achievement)}
+              style={{ cursor: 'pointer', height: '100%' }}
+            >
+              <AchievementCard achievement={achievement} style={{ height: '100%' }} />
+            </motion.div>
+          ))
+        ) : (
+          <div style={{ gridColumn: '1 / -1' }}>
+            <Card style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '1.125rem', margin: 0 }}>No achievements found</p>
+              <p style={{ color: 'var(--text-muted)', opacity: 0.7, fontSize: '0.875rem', marginTop: 'var(--spacing-2)', margin: 0 }}>Try adjusting your filters</p>
+            </Card>
+          </div>
+        )
         }
       </motion.div >
 
@@ -303,7 +377,7 @@ export const ViewAchievementsPage = () => {
 
               <div style={{ position: 'absolute', bottom: 'var(--spacing-6)', right: 'var(--spacing-8)', textAlign: 'right' }}>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: '0 0 var(--spacing-1) 0' }}>Date Awarded</p>
-                <p style={{ color: 'var(--text-light)', fontWeight: '600', margin: 0 }}>{new Date(selectedAchievement.date).toLocaleDateString()}</p>
+                <p style={{ color: 'var(--text-light)', fontWeight: '600', margin: 0 }}>{selectedAchievement.date !== 'N/A' ? new Date(selectedAchievement.date).toLocaleDateString() : 'N/A'}</p>
               </div>
             </div>
 

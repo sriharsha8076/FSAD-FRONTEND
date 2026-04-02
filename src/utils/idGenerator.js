@@ -104,7 +104,7 @@ const getNextLetterPair = (currentPair) => {
 };
 
 /**
- * Generates a unique 6-character Mentor ID: YYMM + 2 letters
+ * Generates a unique 6-character Mentor ID: MEN + YYMM + 2 letters
  * @param {string} fullName 
  * @returns {string} Unique Mentor ID
  */
@@ -126,7 +126,7 @@ export const generateMentorId = (fullName) => {
     existingSuffixes.push(finalInitials);
     localStorage.setItem(existingMentorIdsKey, JSON.stringify(existingSuffixes));
 
-    return `${prefix}${finalInitials}`;
+    return `MEN${prefix}${finalInitials}`;
 };
 
 /**
@@ -147,5 +147,5 @@ export const previewMentorId = (fullName) => {
         finalInitials = getNextLetterPair(finalInitials);
     }
 
-    return `${prefix}${finalInitials}`;
+    return `MEN${prefix}${finalInitials}`;
 };

@@ -5,7 +5,6 @@ import { FormInput, Button } from '../components';
 import { useAuth } from '../utils/AuthContext';
 import { useToast } from '../components/Toast';
 import { Mail, Lock, User, Key, Calendar, Phone, Hash } from 'lucide-react';
-import { generateStudentId, generateMentorId, previewStudentId, previewMentorId } from '../utils/idGenerator';
 import styles from './Auth.module.css';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,6 +20,8 @@ const registerSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string(),
   adminId: z.string().optional(),
+  worksUnderUniversity: z.boolean().optional(),
+  universityId: z.number().optional().or(z.string().transform(val => val ? Number(val) : undefined)),
   agreeToTerms: z.literal(true, {
     errorMap: () => ({ message: 'You must agree to terms' }),
   }),
@@ -54,53 +55,35 @@ export const RegisterPage = () => {
   const [selectedRole, setSelectedRole] = useState('student');
   const [previewId, setPreviewId] = useState('');
   const [customError, setCustomError] = useState('');
-
+  // eslint-disable-next-line
   const firstName = watch('firstName');
   const middleName = watch('middleName');
   const lastName = watch('lastName');
 
-  // Update live preview ID
-  useEffect(() => {
-    const fn = firstName || '';
-    const mn = middleName ? middleName + ' ' : '';
-    const ln = lastName || '';
-    const fullName = `${fn} ${mn}${ln}`.trim();
-
-    if (selectedRole === 'student') {
-      setPreviewId(previewStudentId());
-    } else if (selectedRole === 'mentor') {
-      setPreviewId(previewMentorId(fullName));
-    }
-  }, [selectedRole, firstName, middleName, lastName]);
-
   const navigate = useNavigate();
   const { registerUser } = useAuth();
   const { addToast } = useToast();
-
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     setCustomError('');
-
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const fn = data.firstName;
-        const mn = data.middleName ? data.middleName + ' ' : '';
-        const ln = data.lastName;
-        const fullName = `${fn} ${mn}${ln}`.trim();
-
-        const user = registerUser({
-          ...data,
-          name: fullName,
-          role: selectedRole,
-          adminId: selectedRole === 'mentor' ? data.adminId : null
-        });
-
-        addToast(`Registration successful! Your ID is: ${user.id}`, 'success');
-        navigate(`/${selectedRole === 'admin' ? 'admin' : selectedRole}/dashboard`);
-        resolve();
-      }, 1000);
-    });
+    const fn = data.firstName;
+    const mn = data.middleName ? data.middleName + ' ' : '';
+    const ln = data.lastName;
+    const fullName = `${fn} ${mn}${ln}`.trim();
+    try {
+      await registerUser({
+        ...data,
+        name: fullName,
+        role: selectedRole,
+        dob: data.dob,
+        mobileNo: data.mobileNo
+      });
+      addToast(`Registration successful! Please login with your email.`, 'success');
+      navigate(`/login`);
+    } catch (err) {
+      setCustomError(err.message || "Registration failed");
+      addToast(err.message || "Registration failed", 'error');
+    }
   };
-
   return (
     <div className={styles.pageWrapper}>
       <motion.div
@@ -122,7 +105,6 @@ export const RegisterPage = () => {
           <h1 className={styles.title}>Join SAAMS</h1>
           <p className={styles.subtitle}>Create your account and start today</p>
         </div>
-
         {/* Role Selection */}
         <div className={styles.roleSelection}>
           <label className={styles.roleLabel}>Account Type</label>
@@ -142,32 +124,37 @@ export const RegisterPage = () => {
             ℹ️ Your Unique ID is auto-assigned continuously and locked upon registration.
           </p>
         </div>
-
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-          <FormInput
-            id="previewId"
-            label="Unique ID (Auto-Generated)"
-            type="text"
-            value={previewId}
-            disabled={true}
-            icon={Hash}
-          />
-
           {selectedRole === 'mentor' && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
-              <FormInput
-                id="adminId"
-                label="University Admin ID (Optional)"
-                type="text"
-                placeholder="e.g. harsha21 (Leave blank if independent)"
-                error={errors.adminId?.message || customError}
-                icon={Hash}
-                {...register('adminId')}
-              />
+              <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <input
+                  type="checkbox"
+                  id="worksUnderUniversity"
+                  {...register('worksUnderUniversity')}
+                  style={{ width: '1.2rem', height: '1.2rem' }}
+                />
+                <label htmlFor="worksUnderUniversity" style={{ color: 'var(--text-color)', fontSize: '0.9rem' }}>
+                  I work under a university
+                </label>
+              </div>
+
+              {watch('worksUnderUniversity') && (
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: '1rem' }}>
+                  <FormInput
+                    id="universityId"
+                    label="University ID"
+                    type="number"
+                    placeholder="Enter University ID"
+                    error={errors.universityId?.message}
+                    icon={Hash}
+                    {...register('universityId', { valueAsNumber: true })}
+                  />
+                </motion.div>
+              )}
             </motion.div>
           )}
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <FormInput
               id="firstName"
@@ -223,7 +210,6 @@ export const RegisterPage = () => {
             icon={Mail}
             {...register('email')}
           />
-
           <FormInput
             id="password"
             label="Password"
@@ -242,7 +228,6 @@ export const RegisterPage = () => {
             icon={Key}
             {...register('confirmPassword')}
           />
-
           {/* Terms Agreement */}
           <div style={{ marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -260,23 +245,19 @@ export const RegisterPage = () => {
               <p style={{ color: 'var(--danger)', fontSize: '0.75rem', marginTop: '4px' }}>{errors.agreeToTerms.message}</p>
             )}
           </div>
-
           <Button type="submit" variant="primary" disabled={isSubmitting} style={{ width: '100%' }}>
             {isSubmitting ? 'Creating Account...' : 'Create Account'}
           </Button>
         </form>
-
         {/* Divider */}
         <div className={styles.divider}>
           <div className={styles.dividerLine} />
           <span className={styles.dividerText}>Already have an account?</span>
         </div>
-
         {/* Login Link */}
         <Button onClick={() => navigate('/login')} variant="secondary" style={{ width: '100%' }}>
           Sign In
         </Button>
-
         {/* Back to Landing */}
         <div className={styles.backLink}>
           <button onClick={() => navigate('/')} className={styles.backBtn}>

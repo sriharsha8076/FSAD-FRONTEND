@@ -4,7 +4,6 @@ import { Card, Button, FormInput } from '../components';
 import { Bell, Moon, Globe, Shield, Save } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { useTheme } from '../utils/ThemeContext';
-
 export const SettingsPage = () => {
   const { addToast } = useToast();
   const { theme, setTheme } = useTheme();
@@ -14,15 +13,12 @@ export const SettingsPage = () => {
     twoFactor: false,
     language: 'en',
   });
-
   const handleToggle = (key) => {
     setLocalSettings({ ...settings, [key]: !settings[key] });
   };
-
   const handleSave = () => {
     addToast('Settings saved successfully!', 'success');
   };
-
   return (
     <div style={{ flex: 1, padding: 'var(--spacing-4)' }}>
       <motion.div
@@ -33,7 +29,6 @@ export const SettingsPage = () => {
         <h1 style={{ fontSize: '1.875rem', fontWeight: '700', color: 'var(--text-light)', margin: '0 0 var(--spacing-2) 0' }}>Settings</h1>
         <p style={{ color: 'var(--text-muted)', margin: 0 }}>Customize your SAAMS experience</p>
       </motion.div>
-
       <div style={{ maxWidth: '48rem', marginTop: 'var(--spacing-8)', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
         {/* Notifications */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -70,7 +65,6 @@ export const SettingsPage = () => {
             </div>
           </Card>
         </motion.div>
-
         {/* Appearance */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
           <Card style={{ padding: 'var(--spacing-6)' }}>
@@ -127,7 +121,6 @@ export const SettingsPage = () => {
             </div>
           </Card>
         </motion.div>
-
         {/* Privacy & Security */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
           <Card style={{ padding: 'var(--spacing-6)' }}>
@@ -165,7 +158,6 @@ export const SettingsPage = () => {
             </div>
           </Card>
         </motion.div>
-
         {/* Save Button */}
         <Button
           variant="primary"

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { FormInput, Button } from '../components';
@@ -9,12 +9,10 @@ import styles from './Auth.module.css';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-
 const loginSchema = z.object({
   identifier: z.string().min(1, 'Email or ID is required'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
-
 export const LoginPage = () => {
   const {
     register,
@@ -27,52 +25,26 @@ export const LoginPage = () => {
       password: '',
     }
   });
-
   const navigate = useNavigate();
   const { login } = useAuth();
   const { addToast } = useToast();
-
-  const detectRole = (id) => {
-    // If it's an email containing "admin"
-    if (id.includes('@')) {
-      return id.toLowerCase().includes('admin') ? 'admin' : 'student';
+  const onSubmit = async (data) => {
+    // Hardcoded Super Admin Logic
+    if (data.identifier === 'harsha21' && data.password === 'Harsha@0821') {
+      login(data.identifier, data.password, 'superadmin', 'Harsha (Creator)');
+      addToast(`Welcome back, Creator!`, 'success');
+      navigate(`/ superadmin / dashboard`);
+      return;
     }
-    // Student ID: 10 digits (e.g. 2602000015)
-    if (/^\d{10}$/.test(id)) return 'student';
-    // Mentor ID: 4 digits + 2 letters (e.g. 2602AB)
-    if (/^\d{4}[A-Za-z]{2}$/.test(id)) return 'mentor';
-
-    // Default fallback
-    return 'student';
+    try {
+      const user = await login(data.identifier, data.password);
+      const actualRole = user.role;
+      addToast(`Welcome! Logged in as ${actualRole} `, 'success');
+      navigate(`/ ${actualRole === 'admin' || actualRole === 'university_admin' ? 'admin' : actualRole}/dashboard`);
+    } catch (error) {
+      addToast(error.message || "Failed to login", 'error');
+    }
   };
-
-  const onSubmit = (data) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Hardcoded Super Admin Logic
-        if (data.identifier === 'harsha21' && data.password === 'Harsha@0821') {
-          login(data.identifier, data.password, 'superadmin', 'Harsha (Creator)');
-          addToast(`Welcome back, Creator!`, 'success');
-          navigate(`/superadmin/dashboard`);
-          resolve();
-          return;
-        }
-
-        const dynamicRole = detectRole(data.identifier);
-
-        try {
-          const user = login(data.identifier, data.password, dynamicRole);
-          const actualRole = user.role;
-          addToast(`Welcome! Logged in as ${actualRole}`, 'success');
-          navigate(`/${actualRole === 'admin' ? 'admin' : actualRole}/dashboard`);
-        } catch (error) {
-          addToast(error.message, 'error');
-        }
-        resolve();
-      }, 1000);
-    });
-  };
-
   return (
     <div className={styles.pageWrapper}>
       <motion.div
@@ -94,9 +66,6 @@ export const LoginPage = () => {
           <h1 className={styles.title}>Login to SAAMS</h1>
           <p className={styles.subtitle}>Manage student achievements with ease</p>
         </div>
-
-
-
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
           <FormInput
@@ -117,25 +86,19 @@ export const LoginPage = () => {
             icon={Lock}
             {...register('password')}
           />
-
           <Button type="submit" variant="primary" disabled={isSubmitting} style={{ width: '100%' }}>
             {isSubmitting ? 'Logging in...' : 'Login'}
           </Button>
         </form>
-
-
-
         {/* Divider */}
         <div className={styles.divider}>
           <div className={styles.dividerLine} />
           <span className={styles.dividerText}>Don't have an account?</span>
         </div>
-
         {/* Register Link */}
         <Button onClick={() => navigate('/register')} variant="secondary" style={{ width: '100%' }}>
           Create New Account
         </Button>
-
         {/* Back to Landing */}
         <div className={styles.backLink}>
           <button onClick={() => navigate('/')} className={styles.backBtn}>

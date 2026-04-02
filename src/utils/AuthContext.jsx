@@ -1,5 +1,4 @@
-import React, { createContext, useState, useContext } from 'react';
-import { generateStudentId, generateMentorId } from './idGenerator';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 
 const AuthContext = createContext();
 
@@ -9,120 +8,114 @@ export const AuthProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : null;
   });
 
-  const [usersDB, setUsersDB] = useState(() => {
-    const saved = localStorage.getItem('saams_users_db');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [usersDB, setUsersDB] = useState([]);
 
-  const registerUser = (userData) => {
-    let generatedId;
-    if (userData.role === 'student') {
-      generatedId = generateStudentId();
-    } else if (userData.role === 'mentor') {
-      generatedId = generateMentorId(userData.name);
-    }
-    const newUser = {
-      ...userData,
-      id: generatedId,
-      photo: null,
-      bio: 'Passionate learner and achiever',
-      createdAt: new Date().toISOString(),
-      adminId: userData.role === 'mentor' ? userData.adminId : null,
-    };
-
-    const newDB = [...usersDB, newUser];
-    setUsersDB(newDB);
-    localStorage.setItem('saams_users_db', JSON.stringify(newDB));
-
-    const sessionUser = {
-      id: generatedId,
-      email: userData.email,
-      role: userData.role,
-      name: userData.name,
-      photo: null,
-      bio: 'Passionate learner and achiever',
-      dob: userData.dob,
-      mobileNo: userData.mobileNo,
-      createdAt: newUser.createdAt,
-      adminId: newUser.adminId,
-      isAuthenticated: true
-    };
-    setUser(sessionUser);
-    localStorage.setItem('user', JSON.stringify(sessionUser));
-    return sessionUser;
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('user');
   };
 
-  const login = (identifier, password, role, name = '') => {
-    if (role === 'superadmin') {
+  useEffect(() => {
+    const validateSession = async () => {
+      if (user?.token && user.id !== 'harsha21') {
+        try {
+          const response = await fetch('http://localhost:8080/api/users/me', {
+            headers: { 'Authorization': `Bearer ${user.token}` }
+          });
+          if (response.status === 401 || response.status === 403 || response.status === 404) {
+            logout();
+          }
+        } catch (error) {
+          console.error("Session validation error:", error);
+        }
+      }
+    };
+    validateSession();
+  }, [user?.token, user?.id]);
+
+  // Load admins dynamically for SuperAdmin
+  const fetchAdmins = useCallback(async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/users', {
+        headers: { 'Authorization': `Bearer ${user?.token}` }
+      });
+      if (!response.ok) throw new Error('Failed to fetch users');
+      const data = await response.json();
+      // Filter only admins for display
+      setUsersDB(data.filter(u => u.role === 'UNIVERSITY_ADMIN' || u.role === 'ADMIN'));
+    } catch (error) {
+      console.error(error);
+    }
+  }, [user?.token]);
+
+  const registerUser = async (userData) => {
+    let role = userData.role.toUpperCase();
+    const response = await fetch('http://localhost:8080/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: userData.name,
+        email: userData.email,
+        password: userData.password,
+        role: role,
+        dob: userData.dob,
+        mobileNo: userData.mobileNo,
+        worksUnderUniversity: userData.worksUnderUniversity || false,
+        universityId: userData.universityId || null
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Registration failed');
+    }
+
+    return data;
+  };
+
+  const login = async (identifier, password, roleFallback = '') => {
+    // SuperAdmin hardcode map
+    if (identifier === 'harsha21' || roleFallback === 'superadmin') {
       const sessionUser = {
-        id: identifier,
-        email: `${identifier}@saams.com`,
+        id: 'harsha21',
+        email: 'harsha21@saams.com',
         role: 'superadmin',
-        name: name || 'System Creator',
-        photo: null,
-        bio: 'Master System Administrator',
-        dob: '1990-01-01',
-        mobileNo: '+1 (555) 000-0000',
-        createdAt: new Date().toISOString(),
-        isAuthenticated: true
+        name: 'Harsha (Creator)',
+        isAuthenticated: true,
+        token: 'superadmin-mock-token'
       };
       setUser(sessionUser);
       localStorage.setItem('user', JSON.stringify(sessionUser));
       return sessionUser;
     }
 
-    if (role === 'admin') {
-      // In the future this will check the DB for the admin.
-      // For now, allow dynamically logged in admin (created by superadmin) or fallback.
-      const foundAdmin = usersDB.find(u => (u.email === identifier || u.id === identifier) && u.role === 'admin');
+    const response = await fetch('http://localhost:8080/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: identifier,
+        password: password
+      })
+    });
 
-      let sessionUser;
-      if (foundAdmin) {
-        if (foundAdmin.password !== password) {
-          throw new Error('Incorrect password');
-        }
-        sessionUser = { ...foundAdmin, isAuthenticated: true };
-      } else {
-        // Fallback or demo admin
-        sessionUser = {
-          id: identifier,
-          email: `${identifier}@saams.com`,
-          role: 'admin',
-          name: name || 'Admin',
-          photo: null,
-          bio: 'University Administrator',
-          dob: '1990-01-01',
-          mobileNo: '+1 (555) 999-9999',
-          createdAt: new Date().toISOString(),
-          isAuthenticated: true,
-          mustChangePassword: false, // Default admin doesn't need to change
-        };
-      }
-      setUser(sessionUser);
-      localStorage.setItem('user', JSON.stringify(sessionUser));
-      return sessionUser;
-    }
+    const data = await response.json();
 
-    const foundUser = usersDB.find(u => u.email === identifier || u.id === identifier);
-    if (!foundUser) {
-      throw new Error('User not found. Please check your ID or Email.');
-    }
-    if (foundUser.password !== password) {
-      throw new Error('Incorrect password');
+    if (!response.ok) {
+      throw new Error(data.message || 'Login failed. Check your credentials.');
     }
 
     const sessionUser = {
-      id: foundUser.id,
-      email: foundUser.email,
-      role: foundUser.role,
-      name: foundUser.name,
-      photo: foundUser.photo,
-      bio: foundUser.bio || 'Passionate learner and achiever',
-      dob: foundUser.dob,
-      mobileNo: foundUser.mobileNo,
-      createdAt: foundUser.createdAt || new Date().toISOString(),
+      id: data.id,
+      email: data.email,
+      name: data.name,
+      role: data.role.toLowerCase(),
+      uniqueId: data.uniqueId,
+      dob: data.dob,
+      mobileNo: data.mobileNo,
+      token: data.token,
       isAuthenticated: true
     };
+
     setUser(sessionUser);
     localStorage.setItem('user', JSON.stringify(sessionUser));
     return sessionUser;
@@ -132,52 +125,51 @@ export const AuthProvider = ({ children }) => {
     const updatedUser = { ...user, ...updates };
     setUser(updatedUser);
     localStorage.setItem('user', JSON.stringify(updatedUser));
-
-    const newDB = usersDB.map(u => u.id === user.id ? { ...u, ...updates } : u);
-    setUsersDB(newDB);
-    localStorage.setItem('saams_users_db', JSON.stringify(newDB));
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-  };
+  const createUniversityAdmin = async (adminData) => {
+    const response = await fetch('http://localhost:8080/api/auth/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${user?.token}`
+      },
+      body: JSON.stringify({
+        name: adminData.name,
+        email: adminData.email,
+        password: adminData.password,
+        role: 'UNIVERSITY_ADMIN'
+      })
+    });
 
-  const createUniversityAdmin = (adminData) => {
-    // Check if ID already exists
-    if (usersDB.some(u => u.id === adminData.id)) {
-      throw new Error('An Admin with this ID already exists');
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to create University Admin');
     }
 
-    const newAdmin = {
-      ...adminData,
-      role: 'admin',
-      photo: null,
-      bio: 'University Administrator',
-      createdAt: new Date().toISOString(),
-      mustChangePassword: true,
-    };
-
-    const newDB = [...usersDB, newAdmin];
-    setUsersDB(newDB);
-    localStorage.setItem('saams_users_db', JSON.stringify(newDB));
-    return newAdmin;
+    // Refresh admins
+    fetchAdmins();
+    return data;
   };
 
-  const deleteUniversityAdmin = (adminId) => {
-    // Only allow deletion if the user exists and is an admin
-    const adminToDelete = usersDB.find(u => u.id === adminId && u.role === 'admin');
-    if (!adminToDelete) {
-      throw new Error('Admin not found');
+  const deleteUniversityAdmin = async (adminId) => {
+    const response = await fetch(`http://localhost:8080/api/users/${adminId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${user?.token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete University Admin');
     }
 
-    const newDB = usersDB.filter(u => u.id !== adminId);
-    setUsersDB(newDB);
-    localStorage.setItem('saams_users_db', JSON.stringify(newDB));
+    // Refresh admins
+    fetchAdmins();
   };
 
   return (
-    <AuthContext.Provider value={{ user, usersDB, login, logout, registerUser, updateUser, createUniversityAdmin, deleteUniversityAdmin }}>
+    <AuthContext.Provider value={{ user, usersDB, login, logout, registerUser, updateUser, createUniversityAdmin, deleteUniversityAdmin, fetchAdmins }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,0 +1,4 @@
+﻿
+> fsad@0.0.0 lint
+> eslint . src/pages/StudentDashboard.jsx src/pages/MentorDashboard.jsx src/pages/AdminDashboard.jsx src/pages/SuperAdminDashboard.jsx
+

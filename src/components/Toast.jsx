@@ -1,30 +1,28 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { createContext, useContext, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
-
 const ToastContext = createContext();
-
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
 
   const addToast = (message, type = 'success', duration = 3000) => {
-    const id = Date.now();
-    const toast = { id, message, type };
-    setToasts((prev) => [...prev, toast]);
+    setToasts((prev) => {
+      const newId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
+      const toast = { id: newId, message, type };
 
-    if (duration) {
-      setTimeout(() => {
-        removeToast(id);
-      }, duration);
-    }
+      if (duration) {
+        setTimeout(() => {
+          setToasts((currentToasts) => currentToasts.filter((t) => t.id !== newId));
+        }, duration);
+      }
 
-    return id;
+      return [...prev, toast];
+    });
   };
 
   const removeToast = (id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
-
   return (
     <ToastContext.Provider value={{ addToast, removeToast, toasts }}>
       {children}
@@ -32,7 +30,6 @@ export const ToastProvider = ({ children }) => {
     </ToastContext.Provider>
   );
 };
-
 // eslint-disable-next-line react-refresh/only-export-components
 export const useToast = () => {
   const context = useContext(ToastContext);
@@ -41,7 +38,6 @@ export const useToast = () => {
   }
   return context;
 };
-
 const ToastContainer = ({ toasts, removeToast }) => {
   return (
     <div className="fixed bottom-4 right-4 z-50 space-y-2 max-w-sm">
@@ -57,7 +53,6 @@ const ToastContainer = ({ toasts, removeToast }) => {
     </div>
   );
 };
-
 const Toast = ({ toast, onClose }) => {
   const typeConfig = {
     success: {
@@ -76,10 +71,8 @@ const Toast = ({ toast, onClose }) => {
       borderColor: 'border-blue-400',
     },
   };
-
   const config = typeConfig[toast.type] || typeConfig.info;
   const Icon = config.icon;
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

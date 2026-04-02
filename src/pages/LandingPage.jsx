@@ -3,10 +3,10 @@ import { motion } from 'framer-motion';
 import { Navbar, Button, Card } from '../components';
 import { ArrowRight, Award, Users, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
+import { useAuth } from '../utils/AuthContext';
 export const LandingPage = () => {
   const navigate = useNavigate();
-
+  const { user } = useAuth();
   const features = [
     {
       icon: Award,
@@ -24,7 +24,6 @@ export const LandingPage = () => {
       description: 'Generate detailed reports and visualize achievement trends with interactive charts',
     },
   ];
-
   return (
     <div style={{
       minHeight: '100vh',
@@ -57,10 +56,8 @@ export const LandingPage = () => {
         animationDelay: '2s',
         zIndex: 0
       }} className="animate-blob" />
-
       <div style={{ position: 'relative', zIndex: 1 }}>
         <Navbar />
-
         {/* Hero Section */}
         <section style={{ position: 'relative', maxWidth: '80rem', margin: '0 auto', padding: '80px 16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '48px', alignItems: 'center' }}>
           {/* Left Content */}
@@ -88,7 +85,6 @@ export const LandingPage = () => {
               >
                 #StudentAchievements
               </motion.span>
-
               <h1 style={{
                 fontSize: 'clamp(2.5rem, 6vw, 4.5rem)',
                 fontWeight: '800',
@@ -112,28 +108,38 @@ export const LandingPage = () => {
                 }}> Extracurricular</span> Achievements
               </h1>
             </div>
-
             <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', lineHeight: '1.5', margin: 0 }}>
               Comprehensive platform to recognize, document, and celebrate student achievements. Transform how you manage excellence.
             </p>
-
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
-              <Button
-                variant="primary"
-                onClick={() => navigate('/login')}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-              >
-                Login to Dashboard
-                <ArrowRight size={16} />
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => navigate('/register')}
-              >
-                Start Free Today
-              </Button>
+              {user ? (
+                <Button
+                  variant="primary"
+                  onClick={() => navigate(`/${user.role}/dashboard`)}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                >
+                  Go to Dashboard
+                  <ArrowRight size={16} />
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="primary"
+                    onClick={() => navigate('/login')}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                  >
+                    Login to Dashboard
+                    <ArrowRight size={16} />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => navigate('/register')}
+                  >
+                    Start Free Today
+                  </Button>
+                </>
+              )}
             </div>
-
             {/* Stats */}
             <div style={{
               display: 'grid',
@@ -156,7 +162,6 @@ export const LandingPage = () => {
               </div>
             </div>
           </motion.div>
-
           {/* Right Side - Illustration */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
@@ -208,7 +213,6 @@ export const LandingPage = () => {
             </div>
           </motion.div>
         </section>
-
         {/* Features Section */}
         <section id="features" style={{
           borderTop: '1px solid var(--border-muted)',
@@ -230,7 +234,6 @@ export const LandingPage = () => {
             }}>Powerful Features</h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '1.125rem', margin: 0 }}>Everything you need to manage student achievements effectively</p>
           </motion.div>
-
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
             {features.map((feature, index) => (
               <motion.div
@@ -257,7 +260,6 @@ export const LandingPage = () => {
             ))}
           </div>
         </section>
-
         {/* CTA Section */}
         <section style={{
           maxWidth: '80rem',
@@ -275,18 +277,29 @@ export const LandingPage = () => {
               padding: '48px'
             }}>
               <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '16px', margin: 0 }}>Ready to Transform Student Achievement Management?</h2>
-              <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontSize: '1.125rem', margin: 0 }}>Join us today and start tracking excellence</p>
-              <Button
-                variant="primary"
-                onClick={() => navigate('/register')}
-                style={{ padding: 'var(--spacing-3) var(--spacing-8)', fontSize: '1.125rem' }}
-              >
-                Get Started Free
-              </Button>
+              {user ? (
+                <Button
+                  variant="primary"
+                  onClick={() => navigate(`/${user.role}/dashboard`)}
+                  style={{ padding: 'var(--spacing-3) var(--spacing-8)', fontSize: '1.125rem' }}
+                >
+                  Go to Dashboard
+                </Button>
+              ) : (
+                <>
+                  <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontSize: '1.125rem', margin: 0 }}>Join us today and start tracking excellence</p>
+                  <Button
+                    variant="primary"
+                    onClick={() => navigate('/register')}
+                    style={{ padding: 'var(--spacing-3) var(--spacing-8)', fontSize: '1.125rem' }}
+                  >
+                    Get Started Free
+                  </Button>
+                </>
+              )}
             </Card>
           </motion.div>
         </section>
-
         <footer style={{
           borderTop: '1px solid var(--border-muted)',
           marginTop: '5rem',

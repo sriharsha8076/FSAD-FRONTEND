@@ -86,15 +86,15 @@ export const AchievementCard = ({ achievement, className = '' }) => {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           {achievement.image ? (
-            <img src={achievement.image} alt={achievement.activity} style={{ width: '64px', height: '64px', borderRadius: '8px', objectFit: 'cover' }} />
+            <img src={achievement.image} alt={achievement.title || achievement.activity} style={{ width: '64px', height: '64px', borderRadius: '8px', objectFit: 'cover' }} />
           ) : (
             <div style={{ width: '64px', height: '64px', borderRadius: '8px', background: 'var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ fontSize: '24px' }}>🏆</span>
             </div>
           )}
           <div>
-            <h4 style={{ margin: '0 0 4px 0', fontSize: '1rem', fontWeight: '600', color: 'var(--text-light)' }}>{achievement.activity}</h4>
-            <p style={{ margin: '0', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{achievement.studentName} • {achievement.studentId}</p>
+            <h4 style={{ margin: '0 0 4px 0', fontSize: '1rem', fontWeight: '600', color: 'var(--text-light)' }}>{achievement.title || achievement.activity}</h4>
+            <p style={{ margin: '0', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{achievement.user?.name || achievement.studentName} {achievement.user?.id ? `• ${achievement.user.id}` : ''}</p>
           </div>
         </div>
         <span style={{
@@ -102,18 +102,18 @@ export const AchievementCard = ({ achievement, className = '' }) => {
           borderRadius: '9999px',
           fontSize: '0.75rem',
           fontWeight: '600',
-          background: achievement.status === 'Verified' ? 'var(--success-bg)' : 'var(--warning-bg)',
-          color: achievement.status === 'Verified' ? 'var(--success)' : 'var(--warning)',
-          border: `1px solid ${achievement.status === 'Verified' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
+          background: (achievement.status === 'VERIFIED' || achievement.status === 'Verified') ? 'var(--success-bg)' : 'var(--warning-bg)',
+          color: (achievement.status === 'VERIFIED' || achievement.status === 'Verified') ? 'var(--success)' : 'var(--warning)',
+          border: `1px solid ${(achievement.status === 'VERIFIED' || achievement.status === 'Verified') ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
         }}>
           {achievement.status}
         </span>
       </div>
       <div style={{ marginTop: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         <span style={{ fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px', background: 'var(--card-bg)', color: 'var(--text-muted)' }}>{achievement.category}</span>
-        <span style={{ fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px', background: 'var(--card-bg)', color: 'var(--text-muted)' }}>{achievement.level}</span>
-        <span style={{ fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px', background: 'var(--card-bg)', color: 'var(--text-muted)' }}>{achievement.position}</span>
-        <span style={{ fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px', background: 'var(--card-bg)', color: 'var(--text-muted)' }}>{new Date(achievement.date).toLocaleDateString()}</span>
+        {achievement.level && <span style={{ fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px', background: 'var(--card-bg)', color: 'var(--text-muted)' }}>{achievement.level}</span>}
+        {achievement.position && <span style={{ fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px', background: 'var(--card-bg)', color: 'var(--text-muted)' }}>{achievement.position}</span>}
+        <span style={{ fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px', background: 'var(--card-bg)', color: 'var(--text-muted)' }}>{new Date(achievement.dateAchieved || achievement.date).toLocaleDateString()}</span>
       </div>
     </Card>
   );
