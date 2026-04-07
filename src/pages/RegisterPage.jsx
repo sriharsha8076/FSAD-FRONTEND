@@ -172,10 +172,10 @@ const OtpStep = ({ email, onVerified, onResend, onBack }) => {
             style={{
               width: '48px', height: '60px',
               textAlign: 'center', fontSize: '1.6rem', fontWeight: 700,
-              background: digit ? 'rgba(99,102,241,0.15)' : 'var(--input-bg, rgba(255,255,255,0.05))',
-              border: `2px solid ${error ? '#ef4444' : digit ? '#6366f1' : 'rgba(255,255,255,0.1)'}`,
+              background: digit ? '#eef2ff' : '#f8fafc',
+              border: `2px solid ${error ? '#ef4444' : digit ? '#4f46e5' : '#cbd5e1'}`,
               borderRadius: '12px',
-              color: digit ? '#6366f1' : 'var(--text-main)',
+              color: '#333333',
               outline: 'none',
               transition: 'all 0.2s ease',
               caretColor: '#6366f1',
