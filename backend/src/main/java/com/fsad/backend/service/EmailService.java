@@ -1,37 +1,70 @@
 package com.fsad.backend.service;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class EmailService {
 
-    private final JavaMailSender mailSender;
-
     @Value("${spring.mail.username}")
     private String fromEmail;
 
-    public void sendOtpEmail(String toEmail, String userName, String otp) {
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+    @Value("${BREVO_API_KEY:}")
+    private String brevoApiKey;
 
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject("🔐 Your SAAMS Registration OTP");
+    public void sendOtpEmail(String toEmail, String userName, String otp) {
+        if (brevoApiKey == null || brevoApiKey.isEmpty()) {
+            throw new RuntimeException("BREVO_API_KEY is not configured.");
+        }
+
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("api-key", brevoApiKey);
 
             String htmlContent = buildOtpEmailHtml(userName, otp);
-            helper.setText(htmlContent, true);
 
-            mailSender.send(message);
-        } catch (MessagingException e) {
-            throw new RuntimeException("Failed to send OTP email: " + e.getMessage(), e);
+            Map<String, Object> body = new HashMap<>();
+            
+            Map<String, String> sender = new HashMap<>();
+            sender.put("name", "SAAMS Portal");
+            sender.put("email", fromEmail);
+            body.put("sender", sender);
+
+            Map<String, String> to = new HashMap<>();
+            to.put("email", toEmail);
+            to.put("name", userName);
+            body.put("to", List.of(to));
+
+            body.put("subject", "🔐 Your SAAMS Registration OTP");
+            body.put("htmlContent", htmlContent);
+
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+            
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                "https://api.brevo.com/v3/smtp/email", 
+                request, 
+                String.class
+            );
+
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                throw new RuntimeException("Brevo API returned error: " + response.getBody());
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send OTP email via API: " + e.getMessage(), e);
         }
     }
 
