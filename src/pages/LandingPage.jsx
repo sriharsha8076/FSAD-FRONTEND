@@ -115,7 +115,7 @@ export const LandingPage = () => {
               {user ? (
                 <Button
                   variant="primary"
-                  onClick={() => navigate(`/${user.role}/dashboard`)}
+                  onClick={() => navigate(`/${user.role === 'university_admin' ? 'admin' : user.role}/dashboard`)}
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 >
                   Go to Dashboard
@@ -280,7 +280,7 @@ export const LandingPage = () => {
               {user ? (
                 <Button
                   variant="primary"
-                  onClick={() => navigate(`/${user.role}/dashboard`)}
+                  onClick={() => navigate(`/${user.role === 'university_admin' ? 'admin' : user.role}/dashboard`)}
                   style={{ padding: 'var(--spacing-3) var(--spacing-8)', fontSize: '1.125rem' }}
                 >
                   Go to Dashboard

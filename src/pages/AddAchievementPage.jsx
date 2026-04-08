@@ -6,7 +6,7 @@ import { mockStudents } from '../data/mockData';
 import { useAuth } from '../utils/AuthContext';
 export const AddAchievementPage = () => {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'university_admin';
   const [formData, setFormData] = useState({
     studentName: isAdmin ? '' : user?.name || '',
     activity: '',

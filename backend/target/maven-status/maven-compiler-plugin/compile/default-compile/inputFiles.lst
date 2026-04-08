@@ -2,6 +2,7 @@ D:\FSAD\backend\src\main\java\com\fsad\backend\BackendApplication.java
 D:\FSAD\backend\src\main\java\com\fsad\backend\controller\AchievementController.java
 D:\FSAD\backend\src\main\java\com\fsad\backend\controller\AuthController.java
 D:\FSAD\backend\src\main\java\com\fsad\backend\controller\DashboardController.java
+D:\FSAD\backend\src\main\java\com\fsad\backend\controller\MfaController.java
 D:\FSAD\backend\src\main\java\com\fsad\backend\controller\UniversityController.java
 D:\FSAD\backend\src\main\java\com\fsad\backend\controller\UserController.java
 D:\FSAD\backend\src\main\java\com\fsad\backend\dto\AchievementRequest.java
@@ -9,6 +10,11 @@ D:\FSAD\backend\src\main\java\com\fsad\backend\dto\DashboardResponse.java
 D:\FSAD\backend\src\main\java\com\fsad\backend\dto\JwtResponse.java
 D:\FSAD\backend\src\main\java\com\fsad\backend\dto\LoginRequest.java
 D:\FSAD\backend\src\main\java\com\fsad\backend\dto\MessageResponse.java
+D:\FSAD\backend\src\main\java\com\fsad\backend\dto\MfaSetupResponse.java
+D:\FSAD\backend\src\main\java\com\fsad\backend\dto\MfaStatusResponse.java
+D:\FSAD\backend\src\main\java\com\fsad\backend\dto\MfaVerifyRequest.java
+D:\FSAD\backend\src\main\java\com\fsad\backend\dto\OtpRequest.java
+D:\FSAD\backend\src\main\java\com\fsad\backend\dto\OtpVerifyRequest.java
 D:\FSAD\backend\src\main\java\com\fsad\backend\dto\SignupRequest.java
 D:\FSAD\backend\src\main\java\com\fsad\backend\entity\Achievement.java
 D:\FSAD\backend\src\main\java\com\fsad\backend\entity\AchievementStatus.java
@@ -27,3 +33,6 @@ D:\FSAD\backend\src\main\java\com\fsad\backend\security\SecurityConfig.java
 D:\FSAD\backend\src\main\java\com\fsad\backend\security\UserDetailsImpl.java
 D:\FSAD\backend\src\main\java\com\fsad\backend\security\UserDetailsServiceImpl.java
 D:\FSAD\backend\src\main\java\com\fsad\backend\service\DashboardService.java
+D:\FSAD\backend\src\main\java\com\fsad\backend\service\EmailService.java
+D:\FSAD\backend\src\main\java\com\fsad\backend\service\MfaService.java
+D:\FSAD\backend\src\main\java\com\fsad\backend\service\OtpStore.java

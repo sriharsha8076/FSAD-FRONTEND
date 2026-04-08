@@ -42,7 +42,7 @@ export const Sidebar = () => {
   ];
 
   let menuItems = studentMenuItems;
-  if (user?.role === 'admin') menuItems = adminMenuItems;
+  if (user?.role === 'admin' || user?.role === 'university_admin') menuItems = adminMenuItems;
   if (user?.role === 'superadmin') menuItems = superadminMenuItems;
   if (user?.role === 'mentor') menuItems = mentorMenuItems;
 

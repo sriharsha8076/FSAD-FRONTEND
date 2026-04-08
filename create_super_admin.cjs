@@ -1,39 +1,16 @@
-const https = require('https');
+const bcrypt = require('bcryptjs');
 
-const data = JSON.stringify({
-  name: 'Harsha (Creator)',
-  email: 'harsha21@saams.com',
-  password: 'Harsha@0821',
-  role: 'SUPER_ADMIN',
-  dob: '2000-01-01',
-  mobileNo: '9999999999'
-});
+const hash = bcrypt.hashSync('Harsha@0821', 10);
 
-const options = {
-  hostname: 'fsad-backend-production.up.railway.app',
-  port: 443,
-  path: '/api/auth/register',
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Content-Length': data.length
-  }
-};
+const { execSync } = require('child_process');
+const mysql = `"C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql.exe"`;
 
-const req = https.request(options, (res) => {
-  let responseBody = '';
-  res.on('data', (chunk) => {
-    responseBody += chunk;
-  });
-  res.on('end', () => {
-    console.log(`Status Code: ${res.statusCode}`);
-    console.log(`Response: ${responseBody}`);
-  });
-});
+// Delete all existing admins
+execSync(`${mysql} -u root -pHarsha@0821 fsad_db -e "DELETE FROM users WHERE role IN ('SUPER_ADMIN','UNIVERSITY_ADMIN');"`, { stdio: 'inherit' });
 
-req.on('error', (error) => {
-  console.error(error);
-});
+// Insert new super admin
+const sql = `INSERT INTO users (name, email, password, role, dob, mobile_no, unique_id) VALUES ('Admin21', 'admin21@saams.com', '${hash}', 'SUPER_ADMIN', '2000-01-01', '9999999999', 'ADM000001');`;
+execSync(`${mysql} -u root -pHarsha@0821 fsad_db -e "${sql}"`, { stdio: 'inherit' });
 
-req.write(data);
-req.end();
+console.log('Done! Admin created: email=admin21@saams.com, password=Harsha@0821');
+console.log('Hash used:', hash);

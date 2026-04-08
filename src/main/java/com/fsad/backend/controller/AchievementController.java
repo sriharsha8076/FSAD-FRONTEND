@@ -94,8 +94,16 @@ public class AchievementController {
                 return ResponseEntity.ok(filtered);
             }
 
-            // University admins see all pending
+            // University admins see their university's pending; Super Admin sees all
             List<Achievement> pending = achievementRepository.findByStatus(AchievementStatus.PENDING);
+            User currentUser = userRepository.findById(userDetails.getId()).orElse(null);
+            if (currentUser != null && currentUser.getRole() == com.fsad.backend.entity.Role.UNIVERSITY_ADMIN) {
+                Long uniId = currentUser.getUniversity() != null ? currentUser.getUniversity().getId() : null;
+                pending = pending.stream()
+                        .filter(a -> a.getMentor() != null && a.getMentor().getUniversity() != null 
+                             && a.getMentor().getUniversity().getId().equals(uniId))
+                        .collect(java.util.stream.Collectors.toList());
+            }
             return ResponseEntity.ok(pending);
         } catch (Exception e) {
             e.printStackTrace();
@@ -119,8 +127,17 @@ public class AchievementController {
                 return ResponseEntity.ok(allAssigned);
             }
 
-            // University admins see all achievements
-            return ResponseEntity.ok(achievementRepository.findAll());
+            // University admins see their university's achievements; Super Admin sees all
+            List<Achievement> allAchievements = achievementRepository.findAll();
+            User currentUser = userRepository.findById(userDetails.getId()).orElse(null);
+            if (currentUser != null && currentUser.getRole() == com.fsad.backend.entity.Role.UNIVERSITY_ADMIN) {
+                Long uniId = currentUser.getUniversity() != null ? currentUser.getUniversity().getId() : null;
+                allAchievements = allAchievements.stream()
+                        .filter(a -> a.getMentor() != null && a.getMentor().getUniversity() != null 
+                             && a.getMentor().getUniversity().getId().equals(uniId))
+                        .collect(java.util.stream.Collectors.toList());
+            }
+            return ResponseEntity.ok(allAchievements);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500)
@@ -242,12 +259,10 @@ public class AchievementController {
         boolean isAssignedMentor = currentUser.getRole() == com.fsad.backend.entity.Role.MENTOR &&
                 achievement.getMentor() != null &&
                 currentUser.getUniqueId().equals(achievement.getMentor().getUniqueId());
-        boolean isMentorAdmin = currentUser.getRole() == com.fsad.backend.entity.Role.UNIVERSITY_ADMIN &&
-                achievement.getMentor() != null &&
-                achievement.getMentor().getUniversity() != null &&
-                achievement.getMentor().getUniversity().getId().equals(currentUser.getUniversity().getId());
+        boolean isUniAdmin = currentUser.getRole() == com.fsad.backend.entity.Role.UNIVERSITY_ADMIN;
+        boolean isSuperAdmin = currentUser.getRole() == com.fsad.backend.entity.Role.SUPER_ADMIN;
 
-        if (!isOwner && !isAssignedMentor && !isMentorAdmin) {
+        if (!isOwner && !isAssignedMentor && !isUniAdmin && !isSuperAdmin) {
             return ResponseEntity.status(403).body(new MessageResponse("Unauthorized to access this file."));
         }
 

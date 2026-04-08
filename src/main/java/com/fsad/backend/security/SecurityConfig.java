@@ -64,10 +64,14 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/achievements/debug-db").permitAll()
+                        .requestMatchers("/api/mfa/verify").permitAll()
+                        .requestMatchers("/api/mfa/**").authenticated()
                         .requestMatchers("/api/university/**").hasRole("UNIVERSITY_ADMIN")
                         .anyRequest().authenticated());
+
 
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 

@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/fsad_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3306/fsad_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: root
     password: Harsha@0821
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -19,9 +19,34 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: 2400031017cse1@gmail.com
+    password: wvlxjclmlogvzqhz
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+
 jwt:
-  secret: aVeryLongSecretKeyThatNeedsToBeAtLeast256BitsLongForHS256Algorithm
-  expiration: 86400000 # 24 hours in milliseconds
+  secret: ${JWT_SECRET:aVeryLongSecretKeyThatNeedsToBeAtLeast256BitsLongForHS256Algorithm}
+  expiration: 86400000
+
+otp:
+  expiry-minutes: 5
+
+mfa:
+  encryption:
+    key: FSAD2024MFASecure32CharKeyABC1234
+  reauth:
+    window-minutes: 30
 
 server:
-  port: 8080
+  port: ${PORT:8080}

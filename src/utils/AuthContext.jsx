@@ -5,7 +5,12 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('user');
-    return saved ? JSON.parse(saved) : null;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.role === 'super_admin') parsed.role = 'superadmin';
+      return parsed;
+    }
+    return null;
   });
 
   const [usersDB, setUsersDB] = useState([]);
@@ -104,11 +109,51 @@ export const AuthProvider = ({ children }) => {
       throw new Error(data.message || 'Login failed. Check your credentials.');
     }
 
+    // MFA required — backend returns {requiresMfa, preAuthToken, name, email}
+    if (data.requiresMfa) {
+      return {
+        requiresMfa: true,
+        preAuthToken: data.preAuthToken,
+        name: data.name,
+        email: data.email,
+      };
+    }
+
     const sessionUser = {
       id: data.id,
       email: data.email,
       name: data.name,
-      role: data.role.toLowerCase(),
+      role: data.role ? (data.role.toLowerCase() === 'super_admin' ? 'superadmin' : data.role.toLowerCase()) : 'student',
+      uniqueId: data.uniqueId,
+      dob: data.dob,
+      mobileNo: data.mobileNo,
+      token: data.token,
+      isAuthenticated: true
+    };
+
+    setUser(sessionUser);
+    localStorage.setItem('user', JSON.stringify(sessionUser));
+    return sessionUser;
+  };
+
+  // Called after successful TOTP verification
+  const completeMfaLogin = async (preAuthToken, totpCode) => {
+    const response = await fetch('http://localhost:8080/api/mfa/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ preAuthToken, code: totpCode })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'MFA verification failed.');
+    }
+
+    const sessionUser = {
+      id: data.id,
+      email: data.email,
+      name: data.name,
+      role: data.role ? (data.role.toLowerCase() === 'super_admin' ? 'superadmin' : data.role.toLowerCase()) : 'student',
       uniqueId: data.uniqueId,
       dob: data.dob,
       mobileNo: data.mobileNo,
@@ -169,7 +214,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, usersDB, login, logout, registerUser, updateUser, createUniversityAdmin, deleteUniversityAdmin, fetchAdmins }}>
+    <AuthContext.Provider value={{ user, usersDB, login, logout, registerUser, updateUser, createUniversityAdmin, deleteUniversityAdmin, fetchAdmins, completeMfaLogin }}>
       {children}
     </AuthContext.Provider>
   );

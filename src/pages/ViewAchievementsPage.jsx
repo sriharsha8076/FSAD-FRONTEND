@@ -11,7 +11,7 @@ export const ViewAchievementsPage = () => {
   const { user } = useAuth();
   const { addToast } = useToast();
 
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'university_admin';
   const isMentor = user?.role === 'mentor';
   const isSuperAdmin = user?.role === 'superadmin';
 
