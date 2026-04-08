@@ -1,0 +1,158 @@
+.pageWrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-4);
+    background-color: var(--bg-main);
+}
+
+.authCard {
+    width: 100%;
+    max-width: 450px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-8) var(--spacing-6);
+    box-shadow: var(--shadow-lg);
+}
+
+.header {
+    text-align: center;
+    margin-bottom: var(--spacing-8);
+}
+
+.iconWrapper {
+    display: inline-flex;
+    padding: var(--spacing-3);
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-4);
+    box-shadow: var(--shadow-glow);
+}
+
+.title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0 0 var(--spacing-2) 0;
+}
+
+.subtitle {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.roleSelection {
+    margin-bottom: var(--spacing-6);
+}
+
+.roleLabel {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: var(--spacing-3);
+}
+
+.roleGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-3);
+}
+
+.roleButton {
+    padding: var(--spacing-3) var(--spacing-4);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all var(--transition-normal);
+    background: var(--bg-main);
+    border: 1px solid var(--border-default);
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.roleButton:hover {
+    border-color: var(--primary);
+}
+
+.roleButtonActive {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-color: transparent;
+    color: white;
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-2px);
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+    margin-bottom: var(--spacing-6);
+}
+
+.demoBox {
+    background: var(--bg-main);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-4);
+    margin-bottom: var(--spacing-6);
+}
+
+.demoTitle {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin: 0 0 var(--spacing-2) 0;
+}
+
+.demoText {
+    font-size: 0.75rem;
+    color: var(--text-main);
+    margin: 0 0 calc(var(--spacing-1) / 2) 0;
+}
+
+.divider {
+    position: relative;
+    margin-bottom: var(--spacing-6);
+    text-align: center;
+}
+
+.dividerLine {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    border-top: 1px solid var(--border-default);
+    z-index: 1;
+}
+
+.dividerText {
+    position: relative;
+    z-index: 2;
+    background: var(--bg-surface);
+    /* Match the parent background to mask the line */
+    padding: 0 var(--spacing-2);
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.backLink {
+    text-align: center;
+    margin-top: var(--spacing-6);
+}
+
+.backBtn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.backBtn:hover {
+    color: var(--primary-hover);
+}

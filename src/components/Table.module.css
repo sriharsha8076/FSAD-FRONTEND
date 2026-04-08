@@ -1,0 +1,64 @@
+.tableContainer {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-default);
+    background: var(--bg-surface);
+    /* Custom Scrollbar for Table Wrapper */
+    scrollbar-width: thin;
+}
+
+.tableContainer::-webkit-scrollbar {
+    height: 8px;
+}
+
+.tableContainer::-webkit-scrollbar-thumb {
+    background: var(--border-default);
+    border-radius: 4px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    min-width: 600px;
+    /* Ensure table doesn't squish too much on mobile */
+}
+
+.th {
+    padding: var(--spacing-4);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border-default);
+    background: var(--bg-elevated);
+}
+
+.td {
+    padding: var(--spacing-4);
+    font-size: 0.875rem;
+    color: var(--text-main);
+    border-bottom: 1px solid var(--border-default);
+    vertical-align: middle;
+}
+
+.tr {
+    transition: background-color var(--transition-fast);
+}
+
+.tr:hover {
+    background: var(--border-muted);
+}
+
+.tr:last-child .td {
+    border-bottom: none;
+}
+
+/* Empty State */
+.emptyState {
+    padding: var(--spacing-8);
+    text-align: center;
+    color: var(--text-muted);
+}
