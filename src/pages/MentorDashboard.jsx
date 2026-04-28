@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../utils/api';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Card, Button, useToast } from '../components';
 import { ChartContainer, CustomTooltip } from '../components/ChartContainer';
@@ -15,10 +16,10 @@ export const MentorDashboard = () => {
     const fetchPendingVerifications = React.useCallback(async () => {
         try {
             const [pendingRes, dashboardRes] = await Promise.all([
-                fetch('http://localhost:8080/api/achievements/pending', {
+                fetch(`${API_BASE}/api/achievements/pending`, {
                     headers: { 'Authorization': `Bearer ${user?.token}` }
                 }),
-                fetch('http://localhost:8080/api/dashboard/mentor', {
+                fetch(`${API_BASE}/api/dashboard/mentor`, {
                     headers: { 'Authorization': `Bearer ${user?.token}` }
                 })
             ]);
@@ -50,7 +51,7 @@ export const MentorDashboard = () => {
     const handleVerify = async (id, status) => {
         try {
             const endpoint = status === 'VERIFIED' ? `verify/${id}` : `deny/${id}`;
-            const response = await fetch(`http://localhost:8080/api/achievements/${endpoint}`, {
+            const response = await fetch(`${API_BASE}/api/achievements/${endpoint}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -75,7 +76,7 @@ export const MentorDashboard = () => {
 
     const handleVerifyAll = async () => {
         try {
-            const response = await fetch('http://localhost:8080/api/achievements/verify-all', {
+            const response = await fetch(`${API_BASE}/api/achievements/verify-all`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${user?.token}`

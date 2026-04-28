@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE } from '../utils/api';
 import { motion } from 'framer-motion';
 import { FormInput, Card, useToast, Button } from '../components';
 import { Upload, CheckCircle } from 'lucide-react';
@@ -71,7 +72,7 @@ export const AddAchievementPage = () => {
         const uploadData = new FormData();
         uploadData.append('file', formData.certificateFile);
 
-        const uploadResponse = await fetch('http://localhost:8080/api/achievements/upload', {
+        const uploadResponse = await fetch(`${API_BASE}/api/achievements/upload`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${user.token}`
@@ -91,7 +92,7 @@ export const AddAchievementPage = () => {
       }
 
       // 2. Create the achievement record
-      const response = await fetch('http://localhost:8080/api/achievements', {
+      const response = await fetch(`${API_BASE}/api/achievements`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

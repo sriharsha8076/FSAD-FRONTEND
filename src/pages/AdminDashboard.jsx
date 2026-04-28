@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../utils/api';
 import { motion } from 'framer-motion';
 import { StatCard, ChartCard, AchievementCard, Card, FormInput } from '../components';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -59,10 +60,10 @@ export const AdminDashboard = () => {
     const fetchAchievements = async () => {
       try {
         const [achievementsRes, dashboardRes] = await Promise.all([
-          fetch('http://localhost:8080/api/achievements/pending', {
+          fetch(`${API_BASE}/api/achievements/pending`, {
             headers: { 'Authorization': `Bearer ${user?.token}` }
           }),
-          fetch('http://localhost:8080/api/dashboard/admin', {
+          fetch(`${API_BASE}/api/dashboard/admin`, {
             headers: { 'Authorization': `Bearer ${user?.token}` }
           })
         ]);

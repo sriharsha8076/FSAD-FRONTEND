@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../utils/api';
 import { motion } from 'framer-motion';
 import { StatCard, ChartCard, AchievementCard, Card, Button } from '../components';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
@@ -26,10 +27,10 @@ export const StudentDashboard = () => {
     const fetchAchievements = async () => {
       try {
         const [achievementsRes, dashboardRes] = await Promise.all([
-          fetch('http://localhost:8080/api/achievements/my', {
+          fetch(`${API_BASE}/api/achievements/my`, {
             headers: { 'Authorization': `Bearer ${user?.token}` }
           }),
-          fetch('http://localhost:8080/api/dashboard/student', {
+          fetch(`${API_BASE}/api/dashboard/student`, {
             headers: { 'Authorization': `Bearer ${user?.token}` }
           })
         ]);
@@ -63,7 +64,7 @@ export const StudentDashboard = () => {
       addToast(`Preparing to download certificate...`, 'info');
 
       try {
-        const response = await fetch(`http://localhost:8080/api/achievements/${achievement.id}/file`, {
+        const response = await fetch(`${API_BASE}/api/achievements/${achievement.id}/file`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${user?.token}`

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE } from '../utils/api';
 import { motion } from 'framer-motion';
 import { Card, AchievementCard, Button, FormInput, Modal } from '../components';
 import { Search, Filter, Download } from 'lucide-react';
@@ -35,9 +36,9 @@ export const ViewAchievementsPage = () => {
       try {
         setLoading(true);
         // Choose endpoint based on role
-        let endpoint = 'http://localhost:8080/api/achievements/my';
+        let endpoint = `${API_BASE}/api/achievements/my`;
         if (canSeeAll) {
-          endpoint = 'http://localhost:8080/api/achievements/mentor/all';
+          endpoint = `${API_BASE}/api/achievements/mentor/all`;
         }
 
         const response = await fetch(endpoint, {

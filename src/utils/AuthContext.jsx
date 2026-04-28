@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import { API_BASE } from './api';
 
 const AuthContext = createContext();
 
@@ -24,7 +25,7 @@ export const AuthProvider = ({ children }) => {
     const validateSession = async () => {
       if (user?.token && user.id !== 'harsha21') {
         try {
-          const response = await fetch('http://localhost:8080/api/users/me', {
+          const response = await fetch(`${API_BASE}/api/users/me`, {
             headers: { 'Authorization': `Bearer ${user.token}` }
           });
           if (response.status === 401 || response.status === 403 || response.status === 404) {
@@ -41,7 +42,7 @@ export const AuthProvider = ({ children }) => {
   // Load admins dynamically for SuperAdmin
   const fetchAdmins = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/users', {
+      const response = await fetch(`${API_BASE}/api/users`, {
         headers: { 'Authorization': `Bearer ${user?.token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch users');
@@ -55,7 +56,7 @@ export const AuthProvider = ({ children }) => {
 
   const registerUser = async (userData) => {
     let role = userData.role.toUpperCase();
-    const response = await fetch('http://localhost:8080/api/auth/register', {
+    const response = await fetch(`${API_BASE}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -94,7 +95,7 @@ export const AuthProvider = ({ children }) => {
       return sessionUser;
     }
 
-    const response = await fetch('http://localhost:8080/api/auth/login', {
+    const response = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -138,7 +139,7 @@ export const AuthProvider = ({ children }) => {
 
   // Called after successful TOTP verification
   const completeMfaLogin = async (preAuthToken, totpCode) => {
-    const response = await fetch('http://localhost:8080/api/mfa/verify', {
+    const response = await fetch(`${API_BASE}/api/mfa/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ preAuthToken, code: totpCode })
@@ -173,7 +174,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const createUniversityAdmin = async (adminData) => {
-    const response = await fetch('http://localhost:8080/api/auth/register', {
+    const response = await fetch(`${API_BASE}/api/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -198,7 +199,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const deleteUniversityAdmin = async (adminId) => {
-    const response = await fetch(`http://localhost:8080/api/users/${adminId}`, {
+    const response = await fetch(`${API_BASE}/api/users/${adminId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${user?.token}`
