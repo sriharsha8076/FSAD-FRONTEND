@@ -38,6 +38,7 @@ export const LoginPage = () => {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(loginSchema),
@@ -136,6 +137,15 @@ export const LoginPage = () => {
                 {isSubmitting ? 'Logging in...' : 'Login'}
               </Button>
             </form>
+
+            <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <p style={{ textAlign: 'center', fontSize: '0.9rem', color: '#aaa', margin: 0 }}>Or use demo credentials:</p>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <Button type="button" variant="secondary" onClick={() => { setValue('identifier', 'student@demo.com'); setValue('password', 'Demo@123'); }} style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>Student</Button>
+                <Button type="button" variant="secondary" onClick={() => { setValue('identifier', 'uniadmin@demo.com'); setValue('password', 'Demo@123'); }} style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>Uni Admin</Button>
+                <Button type="button" variant="secondary" onClick={() => { setValue('identifier', 'superadmin@demo.com'); setValue('password', 'Demo@123'); }} style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>Super Admin</Button>
+              </div>
+            </div>
 
             <div className={styles.divider}>
               <div className={styles.dividerLine} />
