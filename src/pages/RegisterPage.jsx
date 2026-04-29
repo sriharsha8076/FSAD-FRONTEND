@@ -34,7 +34,7 @@ const registerSchema = z.object({
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 // ─── OTP Step Component ───────────────────────────────────────────────────────
-const OtpStep = ({ email, onVerified, onResend, onBack }) => {
+const OtpStep = ({ email, pendingPayload, onVerified, onResend, onBack }) => {
   const [digits, setDigits] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(30);
@@ -92,19 +92,29 @@ const OtpStep = ({ email, onVerified, onResend, onBack }) => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${API_BASE}/api/auth/verify-otp`, {
+      // Step 1: Verify OTP
+      const verifyRes = await fetch(`${API_BASE}/api/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Verification failed');
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok) throw new Error(verifyData.message || 'Verification failed');
+
+      // Step 2: Register the user
+      const regRes = await fetch(`${API_BASE}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pendingPayload),
+      });
+      const regData = await regRes.json();
+      if (!regRes.ok) throw new Error(regData.message || 'Registration failed');
+
       addToast('🎉 Account created! Please login.', 'success');
       onVerified();
     } catch (err) {
       setError(err.message);
       addToast(err.message, 'error');
-      // Shake the boxes on error
       setDigits(['', '', '', '', '', '']);
       setTimeout(() => inputRefs.current[0]?.focus(), 100);
     } finally {
@@ -546,6 +556,7 @@ export const RegisterPage = () => {
           ) : (
             <OtpStep
               email={registeredEmail}
+              pendingPayload={pendingPayload}
               onVerified={() => navigate('/login')}
               onResend={handleResend}
               onBack={() => setStep('form')}

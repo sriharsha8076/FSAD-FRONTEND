@@ -5,8 +5,10 @@ import { FormInput, Card, useToast, Button } from '../components';
 import { Upload, CheckCircle } from 'lucide-react';
 import { mockStudents } from '../data/mockData';
 import { useAuth } from '../utils/AuthContext';
+import { useNavigate } from 'react-router-dom';
 export const AddAchievementPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isAdmin = user?.role === 'admin' || user?.role === 'university_admin';
   const [formData, setFormData] = useState({
     studentName: isAdmin ? '' : user?.name || '',
@@ -113,21 +115,10 @@ export const AddAchievementPage = () => {
       }
       addToast(data.message || 'Achievement added successfully!', 'success');
       setTimeout(() => {
-        setIsSubmitted(false);
-        setFormData({
-          studentName: isAdmin ? '' : user?.name || '',
-          activity: '',
-          category: '',
-          level: '',
-          position: '',
-          date: '',
-          description: '',
-          certificateFile: null,
-          sharingOption: 'self',
-          mentorId: '',
-        });
-        setErrors({});
-      }, 1000);
+        // Navigate back to dashboard so achievements list refreshes
+        const dashPath = isAdmin ? '/admin/dashboard' : `/${user?.role}/dashboard`;
+        navigate(dashPath);
+      }, 1200);
     } catch (error) {
       addToast(error.message, 'error');
       setIsSubmitted(false);

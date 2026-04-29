@@ -83,7 +83,7 @@ export const AdminDashboard = () => {
     if (user?.token && !user.mustChangePassword) {
       fetchAchievements();
     }
-  }, [user, addToast]);
+  }, [user?.token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredAchievements = achievements.filter((achievement) =>
     (achievement.user?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||

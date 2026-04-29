@@ -26,24 +26,28 @@ export const StudentDashboard = () => {
   useEffect(() => {
     const fetchAchievements = async () => {
       try {
-        const [achievementsRes, dashboardRes] = await Promise.all([
-          fetch(`${API_BASE}/api/achievements/my`, {
-            headers: { 'Authorization': `Bearer ${user?.token}` }
-          }),
-          fetch(`${API_BASE}/api/dashboard/student`, {
-            headers: { 'Authorization': `Bearer ${user?.token}` }
-          })
-        ]);
-        if (!achievementsRes.ok || !dashboardRes.ok) throw new Error('Failed to fetch data');
-
-        const achievementsData = await achievementsRes.json();
-        const dashboardJson = await dashboardRes.json();
-
-        setStudentAchievements(achievementsData);
-        setDashboardData(dashboardJson);
+        const achievementsRes = await fetch(`${API_BASE}/api/achievements/my`, {
+          headers: { 'Authorization': `Bearer ${user?.token}` }
+        });
+        if (achievementsRes.ok) {
+          const achievementsData = await achievementsRes.json();
+          setStudentAchievements(achievementsData);
+        }
       } catch (error) {
-        console.error(error);
-        addToast('Error loading dashboard data', 'error');
+        console.error('Achievements fetch error:', error);
+      }
+
+      // Dashboard stats — optional, don't block achievements if it fails
+      try {
+        const dashboardRes = await fetch(`${API_BASE}/api/dashboard/student`, {
+          headers: { 'Authorization': `Bearer ${user?.token}` }
+        });
+        if (dashboardRes.ok) {
+          const dashboardJson = await dashboardRes.json();
+          setDashboardData(dashboardJson);
+        }
+      } catch (error) {
+        console.error('Dashboard stats error:', error);
       } finally {
         setLoading(false);
       }
@@ -52,7 +56,7 @@ export const StudentDashboard = () => {
     if (user?.token) {
       fetchAchievements();
     }
-  }, [user, addToast]);
+  }, [user?.token]); // eslint-disable-line react-hooks/exhaustive-deps
   const badges = [
     { name: 'Rising Star', description: '5+ Achievements' },
     { name: 'Team Player', description: 'Sports Category' },

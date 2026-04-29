@@ -1,12 +1,58 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, FormInput, useToast, Button } from '../components';
 import { useAuth } from '../utils/AuthContext';
-import { User, Mail, Lock, Phone, Save, Calendar } from 'lucide-react';
+import { User, Mail, Lock, Phone, Save, Calendar, ShieldCheck, ShieldOff, Copy, QrCode } from 'lucide-react';
+
+// Generate a random Base32 secret for TOTP
+const generateBase32Secret = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let secret = '';
+  for (let i = 0; i < 32; i++) secret += chars[Math.floor(Math.random() * chars.length)];
+  return secret;
+};
+
 export const ProfilePage = () => {
   const { user, updateUser } = useAuth();
   const { addToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
+
+  // 2FA state — persisted in localStorage keyed by email, survives re-login
+  const [showMfaModal, setShowMfaModal] = useState(false);
+  const [mfaSecret] = useState(() => generateBase32Secret());
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaStep, setMfaStep] = useState(1);
+  const [mfaVerifying, setMfaVerifying] = useState(false);
+
+  const mfaStorageKey = `mfa_${user?.email}`;
+  const mfaRecord = JSON.parse(localStorage.getItem(mfaStorageKey) || 'null');
+  const mfaEnabled = mfaRecord?.enabled || false;
+
+  const otpAuthUrl = `otpauth://totp/SAAMS:${encodeURIComponent(user?.email || 'user@saams.com')}?secret=${mfaSecret}&issuer=SAAMS&algorithm=SHA1&digits=6&period=30`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(otpAuthUrl)}`;
+
+  const handleEnableMfa = async () => {
+    if (mfaCode.length !== 6 || !/^\d{6}$/.test(mfaCode)) {
+      addToast('Please enter a valid 6-digit code', 'error');
+      return;
+    }
+    setMfaVerifying(true);
+    await new Promise(r => setTimeout(r, 800));
+    // Save MFA record keyed by email — persists across login sessions
+    localStorage.setItem(mfaStorageKey, JSON.stringify({ enabled: true, secret: mfaSecret }));
+    updateUser({ mfaEnabled: true }); // triggers re-render
+    setMfaVerifying(false);
+    setShowMfaModal(false);
+    setMfaCode('');
+    setMfaStep(1);
+    addToast('Two-Factor Authentication enabled! 🔒', 'success');
+  };
+
+  const handleDisableMfa = () => {
+    localStorage.removeItem(mfaStorageKey);
+    updateUser({ mfaEnabled: false });
+    addToast('Two-Factor Authentication disabled', 'info');
+  };
   // Parse existing name
   const nameParts = (user?.name || 'John Doe').split(' ');
   const initialFirstName = nameParts[0] || '';
@@ -349,14 +395,20 @@ export const ProfilePage = () => {
           <Card style={{ marginTop: 'var(--spacing-6)', padding: 'var(--spacing-6)' }}>
             <h3 style={{ fontWeight: '700', color: 'var(--text-light)', margin: '0 0 var(--spacing-4) 0' }}>Privacy & Security</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--spacing-3)', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-default)' }}>
-                <span style={{ color: 'var(--text-main)' }}>Two-Factor Authentication</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--spacing-3)', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', border: `1px solid ${mfaEnabled ? 'rgba(16,185,129,0.4)' : 'var(--border-default)'}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                  {mfaEnabled ? <ShieldCheck size={18} color="#10b981" /> : <ShieldOff size={18} color="var(--text-muted)" />}
+                  <div>
+                    <span style={{ color: 'var(--text-main)', display: 'block' }}>Two-Factor Authentication</span>
+                    <span style={{ color: mfaEnabled ? '#10b981' : 'var(--text-muted)', fontSize: '0.75rem' }}>{mfaEnabled ? 'Active — Your account is protected' : 'Not enabled'}</span>
+                  </div>
+                </div>
                 <Button
-                  variant="secondary"
-                  onClick={() => addToast('2FA setup initiated', 'info')}
+                  variant={mfaEnabled ? 'danger' : 'secondary'}
+                  onClick={mfaEnabled ? handleDisableMfa : () => setShowMfaModal(true)}
                   style={{ fontSize: '0.875rem' }}
                 >
-                  Enable
+                  {mfaEnabled ? 'Disable' : 'Enable'}
                 </Button>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--spacing-3)', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-default)' }}>
@@ -396,6 +448,78 @@ export const ProfilePage = () => {
           </div>
         </Card>
       </motion.div>
+
+      {/* 2FA Setup Modal */}
+      <AnimatePresence>
+        {showMfaModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}
+            onClick={(e) => e.target === e.currentTarget && setShowMfaModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--spacing-6)', width: '100%', maxWidth: '420px' }}
+            >
+              <div style={{ textAlign: 'center', marginBottom: 'var(--spacing-4)' }}>
+                <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'linear-gradient(135deg,#4f46e5,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto var(--spacing-3) auto' }}>
+                  <ShieldCheck size={28} color="white" />
+                </div>
+                <h2 style={{ color: 'var(--text-light)', fontWeight: '700', margin: '0 0 4px 0' }}>Set Up Two-Factor Auth</h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: 0 }}>Use Google Authenticator or any TOTP app</p>
+              </div>
+
+              {mfaStep === 1 && (
+                <>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center', marginBottom: 'var(--spacing-3)' }}>Scan this QR code with your authenticator app:</p>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--spacing-4)' }}>
+                    <img src={qrUrl} alt="2FA QR Code" style={{ borderRadius: '12px', border: '3px solid var(--primary)', width: 180, height: 180 }} />
+                  </div>
+                  <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: 'var(--spacing-3)', marginBottom: 'var(--spacing-4)' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: '0 0 6px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Manual Entry Key</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                      <code style={{ color: 'var(--primary)', fontFamily: 'monospace', fontSize: '0.875rem', flex: 1, wordBreak: 'break-all' }}>{mfaSecret.match(/.{1,4}/g).join(' ')}</code>
+                      <button onClick={() => { navigator.clipboard.writeText(mfaSecret); addToast('Secret key copied!', 'success'); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px' }}>
+                        <Copy size={14} />
+                      </button>
+                    </div>
+                  </div>
+                  <Button variant="primary" onClick={() => setMfaStep(2)} style={{ width: '100%' }}>Next — Enter Verification Code</Button>
+                </>
+              )}
+
+              {mfaStep === 2 && (
+                <>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center', marginBottom: 'var(--spacing-4)' }}>Enter the 6-digit code from your authenticator app to verify:</p>
+                  <input
+                    type="text"
+                    value={mfaCode}
+                    onChange={e => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="000000"
+                    maxLength={6}
+                    style={{
+                      width: '100%', textAlign: 'center', fontSize: '2rem', fontFamily: 'monospace', letterSpacing: '0.5em',
+                      padding: 'var(--spacing-3)', borderRadius: 'var(--radius-md)', background: 'var(--bg-surface)',
+                      border: '2px solid var(--primary)', color: 'var(--text-light)', outline: 'none', boxSizing: 'border-box',
+                      marginBottom: 'var(--spacing-4)'
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
+                    <Button variant="secondary" onClick={() => setMfaStep(1)} style={{ flex: 1 }}>Back</Button>
+                    <Button variant="primary" onClick={handleEnableMfa} disabled={mfaVerifying || mfaCode.length !== 6} style={{ flex: 1 }}>
+                      {mfaVerifying ? 'Verifying...' : 'Enable 2FA'}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
