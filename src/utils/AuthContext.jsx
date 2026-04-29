@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const validateSession = async () => {
-      if (user?.token && user.id !== 'harsha21') {
+      if (user?.token && user.id !== 'harsha21' && !String(user.id).startsWith('demo-')) {
         try {
           const response = await fetch(`${API_BASE}/api/users/me`, {
             headers: { 'Authorization': `Bearer ${user.token}` }
@@ -144,6 +144,20 @@ export const AuthProvider = ({ children }) => {
       setUser(sessionUser);
       localStorage.setItem('user', JSON.stringify(sessionUser));
       return sessionUser;
+    }
+
+    // Demo accounts bypass (No DB required)
+    if (identifier === 'student@demo.com' && password === 'Demo@123') {
+      const sessionUser = { id: 'demo-student', email: 'student@demo.com', role: 'student', name: 'Demo Student', uniqueId: '202404000101', isAuthenticated: true, token: 'demo-mock-token' };
+      setUser(sessionUser); localStorage.setItem('user', JSON.stringify(sessionUser)); return sessionUser;
+    }
+    if (identifier === 'mentor@demo.com' && password === 'Demo@123') {
+      const sessionUser = { id: 'demo-mentor', email: 'mentor@demo.com', role: 'mentor', name: 'Demo Mentor', uniqueId: '2024000104DE', isAuthenticated: true, token: 'demo-mock-token' };
+      setUser(sessionUser); localStorage.setItem('user', JSON.stringify(sessionUser)); return sessionUser;
+    }
+    if (identifier === 'uniadmin@demo.com' && password === 'Demo@123') {
+      const sessionUser = { id: 'demo-uniadmin', email: 'uniadmin@demo.com', role: 'university_admin', name: 'Demo Uni Admin', uniqueId: 'ADM000102', isAuthenticated: true, token: 'demo-mock-token' };
+      setUser(sessionUser); localStorage.setItem('user', JSON.stringify(sessionUser)); return sessionUser;
     }
 
     const response = await fetch(`${API_BASE}/api/auth/login`, {
